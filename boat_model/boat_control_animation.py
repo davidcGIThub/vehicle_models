@@ -94,6 +94,7 @@ def animate(i):
     # self.x,self.y,self.theta, 
     #                      self.x_dot, self.y_dot
     # self, x, y, x_dot, theta, y_dot, x_des, y_des
+    # accel_c, delta_c = controller.pos_control(states[0], states[1], states[2], states[3],states[4], position[0], position[1], tolerance = 0.1)
     accel_c, delta_c = controller.pos_control(states[0], states[1], states[2], states[3],states[4], position[0], position[1], tolerance = 0.1)
     # input = np.array([v_c[i], phi_c[i]])
     input = np.array([accel_c, delta_c])
@@ -101,7 +102,6 @@ def animate(i):
     boat_fig.xy = boat.getBodyPoints()
     rudder_fig.xy = boat.getRudderPoints()
     desired_position_fig.center = (position[0],position[1])
-    plt.plot(path[:,0],path[:,1])
     # update time
     time_text.set_text('time = %.1f' % t)
 

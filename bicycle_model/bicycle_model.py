@@ -16,7 +16,8 @@ class BicycleModel:
                  R = 0.2,
                  alpha = np.array([0.1,0.01,0.1,0.01]),
                  dt = 0.1,
-                 delta_max = np.pi/4):
+                 delta_max = np.pi/4,
+                 v_max = 5):
         self._x = x
         self._y = y
         self._theta = theta
@@ -30,6 +31,7 @@ class BicycleModel:
         self._R = R 
         self._dt = dt
         self._delta_max = delta_max
+        self._v_max = v_max
     
     def setState(self,x,y,theta,delta):
         self._x = x
@@ -40,7 +42,6 @@ class BicycleModel:
     def vel_motion_model(self,input):
         v = input[0] # velocity 
         phi = input[1] # front wheel turning rate
-
         v_hat = v + (self._alpha1 * v**2 + self._alpha4 * phi**2) * np.random.randn()
         phi_hat = phi + (self._alpha2 * v**2 + self._alpha3 * phi**2) * np.random.randn()
         self._delta = np.clip(self._delta + phi_hat * self._dt, -self._delta_max, self._delta_max)
@@ -48,6 +49,7 @@ class BicycleModel:
         self._theta = self._theta + v_hat*np.cos(beta)*np.tan(self._delta)/self._L * self._dt
         self._x = self._x + v_hat*np.cos(self._theta+beta) * self._dt
         self._y = self._y + v_hat*np.sin(self._theta+beta) * self._dt
+        return v_hat, phi_hat
 
     def getState(self):
         return np.array([self._x,self._y,self._theta,self._delta])

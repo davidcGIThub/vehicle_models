@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from unicycle_model import UnicycleModel
 from unicycle_kinematic_trajectory_tracker import UnicycleKinematicTrajectoryTracker
-from bsplinegenerator.bsplines import BsplineEvaluation
+from figure_eight_trajectory import FigureEightTrajectoryGenerator
 import os
 
 x_limits = 10
@@ -14,16 +14,10 @@ time_array = np.linspace(0,sec,int(sec/0.1+1))
 dt = time_array[1]
 v_max = 5
 
-# Trajectory
-control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
- [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])+ 1
-bspline_gen = BsplineEvaluation(control_points, 3,0,1)
-global path, velocity_data, acceleration_data
-num_data_points = 100
-path, time_data = bspline_gen.get_spline_data(num_data_points)
-velocity_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,1)
-acceleration_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,2)
-
+amplitude = 5
+frequency = 0.2
+traj_gen = FigureEightTrajectoryGenerator(amplitude, frequency)
+path = traj_gen.evaluate_trajectory_over_time_interval(time_array)
 
 unicycle = UnicycleModel(x = 0, 
                          y = 0,
@@ -61,9 +55,8 @@ def animate(i):
     # y_d = 10
     # states_desired = np.array([x_d,y_d])
     t = time_array[i]
-    position = path[:,i]
-    velocity = velocity_data[:,i]
-    acceleration = acceleration_data[:,i]
+    position = traj_gen.evaluate_trajectory_at_time_t(t)
+    velocity = traj_gen.evaluate_derivative_at_time_t(t)
     states_desired = np.array([position[0],position[1],None,velocity[0],velocity[1],None])
     states = unicycle.getState()
     if i > 0:

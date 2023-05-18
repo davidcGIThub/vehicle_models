@@ -9,19 +9,34 @@ from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
 
-x_limits = 10
-y_limits = 10
-sec = 90
 
 # Trajectory
-control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
- [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])
-bspline_gen = BsplineEvaluation(control_points, 3,0,1)
-global path, velocity_data, acceleration_data
+# control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
+#  [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])
+control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059,  1.64045914,  5.10907334,
+   6.44546333,  5.10907334],
+ [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
+  -0.45353879,  3.99957881]])
+scale_factor = 1.2370004896215194
+# control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
+#    6.63348044,  4.73303911],
+#  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
+#   -0.22212118,  3.53680028]])
+# scale_factor = 1.2370231646042702
+x_limits = [np.min(control_points[0,:]), np.max(control_points[0,:])]
+y_limits = [np.min(control_points[1,:]), np.max(control_points[1,:])]
+sec = 90
+start_time = 0
+bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
+
+global path, velocity_data, acceleration_data, true_x_position, true_y_position, true_velocity
 num_data_points = 100
 path, time_data = bspline_gen.get_spline_data(num_data_points)
 velocity_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,1)
 acceleration_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,2)
+true_x_position = time_data*0
+true_y_position = time_data*0
+true_velocity = time_data*0
 
 # spline_at_knot_points, knot_points = bspline_gen.get_spline_at_knot_points()
 # bezier_control_points = bspline_gen.get_bezier_control_points()
@@ -35,7 +50,9 @@ L = 1
 lr = 0.5
 R = 0.2
 v_max = 3
-delta_max = np.pi/2
+delta_max = np.pi/6
+max_curvature = np.tan(delta_max)/L
+print("max_curvature: " , max_curvature)
 dir = np.arctan2(start_direction[1], start_direction[0])
 bike = BicycleModel(x = start_point[0], 
                     y = start_point[1],
@@ -46,7 +63,8 @@ bike = BicycleModel(x = start_point[0],
                     R = R,
                     alpha = np.array([0.1,0.01,0.1,0.01]),
                     dt = dt,
-                    delta_max = delta_max)
+                    delta_max = delta_max,
+                    v_max = v_max+2)
 
 ## plotting
 
@@ -56,7 +74,7 @@ def plot_sfc(ax,sfc):
 
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
-                     xlim=(0,x_limits), ylim=(0,y_limits))
+                     xlim=(x_limits[0],x_limits[1]), ylim=(y_limits[0],y_limits[1]))
 ax.grid()
 front_wheel_fig = plt.Polygon(bike.getFrontWheelPoints(),fc = 'k')
 back_wheel_fig = plt.Polygon(bike.getBackWheelPoints(),fc = 'k')
@@ -66,11 +84,12 @@ desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='r')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
+
 controller = BicycleKinematicController(kp_xy = 5, 
                                         kd_xy = 1,
                                         kp_theta = 3,
-                                        kd_theta = 1, 
-                                        kp_delta = 4,
+                                        kd_theta = 0.5, 
+                                        kp_delta = 5,
                                         v_max = v_max,
                                         delta_max = delta_max,
                                         l = lr,
@@ -90,6 +109,8 @@ def animate(i):
     global bike, controller, path, velocity_data, acceleration_data
     # propogate robot motion
     states = bike.getState() 
+    true_x_position[i] = states[0]
+    true_y_position[i] = states[1]
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
@@ -100,12 +121,12 @@ def animate(i):
     # v_c1, phi_c1 = controller.p_control(states[0], states[1], states[2], states[3], position[0], position[1],.01)
     # input = np.array([v_c[i], phi_c[i]])
     input = np.array([v_c1, phi_c1])
-    bike.vel_motion_model(input)
+    v_hat, phi_hat = bike.vel_motion_model(input)
+    true_velocity[i] = v_hat
     front_wheel_fig.xy = bike.getFrontWheelPoints()
     back_wheel_fig.xy = bike.getBackWheelPoints()
     body_fig.xy = bike.getBodyPoints()
     desired_position_fig.center = (position[0],position[1])
-    plt.plot(path[:,0],path[:,1])
     
     # update time
     time_text.set_text('time = %.1f' % t)
@@ -118,6 +139,21 @@ animate(0)
 ani = animation.FuncAnimation(fig, animate, frames = np.size(time_data), 
                             interval = dt*100, blit = True, init_func = init, repeat = False)
 
+plt.show()
+
+x_error = true_x_position - path[0,:]
+y_error = true_y_position - path[1,:]
+position_error = np.sqrt(x_error**2 + y_error**2)
+
+plt.figure()
+plt.plot(time_data, position_error)
+plt.title("Position Error")
+plt.show()
+
+velocity_error = true_velocity - np.linalg.norm(velocity_data,2,0)
+plt.figure()
+plt.plot(time_data, velocity_error)
+plt.title("Velocity Error")
 plt.show()
 
 # file_name = os.getcwd() + "/bike_animation.gif"
