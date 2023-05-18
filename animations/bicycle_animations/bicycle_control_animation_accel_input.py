@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
-from bicycle_model import BicycleModel
-from bicycle_kinematic_controller import BicycleKinematicController
+from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
+from vehicle_simulator.vehicle_controllers.bicycle_kinematic_controller import BicycleKinematicController
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -13,16 +13,16 @@ import time
 # Trajectory
 # control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
 #  [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])
-control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059,  1.64045914,  5.10907334,
-   6.44546333,  5.10907334],
- [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
-  -0.45353879,  3.99957881]])
-scale_factor = 1.2370004896215194
-# control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
-#    6.63348044,  4.73303911],
-#  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
-#   -0.22212118,  3.53680028]])
-# scale_factor = 1.2370231646042702
+# control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059,  1.64045914,  5.10907334,
+#    6.44546333,  5.10907334],
+#  [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
+#   -0.45353879,  3.99957881]])
+# scale_factor = 1.2370004896215194
+control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
+   6.63348044,  4.73303911],
+ [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
+  -0.22212118,  3.53680028]])
+scale_factor = 1.2370231646042702
 x_limits = [np.min(control_points[0,:]), np.max(control_points[0,:])]
 y_limits = [np.min(control_points[1,:]), np.max(control_points[1,:])]
 sec = 90
@@ -58,13 +58,16 @@ bike = BicycleModel(x = start_point[0],
                     y = start_point[1],
                     theta = dir,
                     delta = 0,
+                    x_dot = 0, 
+                    y_dot = 0, 
+                    theta_dot = 0, 
+                    delta_dot = 0,
                     lr = lr,
                     L = L,
                     R = R,
                     alpha = np.array([0.1,0.01,0.1,0.01]),
-                    dt = dt,
                     delta_max = delta_max,
-                    v_max = v_max+2)
+                    vel_max = v_max+2)
 
 ## plotting
 
@@ -85,15 +88,14 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
 
-controller = BicycleKinematicController(kp_xy = 5, 
-                                        kd_xy = 1,
-                                        kp_theta = 3,
-                                        kd_theta = 0.5, 
-                                        kp_delta = 5,
-                                        v_max = v_max,
+controller = BicycleKinematicController(k_pos = 5, 
+                                        k_vel = 5,
+                                        k_delta = 5,
+                                        vel_max = v_max,
                                         delta_max = delta_max,
-                                        l = lr,
+                                        lr = lr,
                                         L = L)
+
 
 
 def init():
@@ -109,25 +111,22 @@ def animate(i):
     global bike, controller, path, velocity_data, acceleration_data
     # propogate robot motion
     states = bike.getState() 
-    true_x_position[i] = states[0]
-    true_y_position[i] = states[1]
+    true_x_position[i] = states[0,0]
+    true_y_position[i] = states[0,1]
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
     acceleration = acceleration_data[:,i]
-    x_des_states = np.array([position[0], velocity[0], acceleration[0]])
-    y_des_states = np.array([position[1], velocity[1], acceleration[1]])
-    v_c1, phi_c1 = controller.pd_control(states[0], states[1], states[2], states[3],x_des_states,y_des_states)
+    desired_states = np.vstack((position, velocity, acceleration))
+    vel_dot, delta_dot = controller.mpc_control_accel_input(states, desired_states)
     # v_c1, phi_c1 = controller.p_control(states[0], states[1], states[2], states[3], position[0], position[1],.01)
     # input = np.array([v_c[i], phi_c[i]])
-    input = np.array([v_c1, phi_c1])
-    v_hat, phi_hat = bike.vel_motion_model(input)
-    true_velocity[i] = v_hat
+    v_dot_hat, delta_dot_hat = bike.update_acceleration_motion_model(vel_dot, delta_dot, dt)
     front_wheel_fig.xy = bike.getFrontWheelPoints()
     back_wheel_fig.xy = bike.getBackWheelPoints()
     body_fig.xy = bike.getBodyPoints()
     desired_position_fig.center = (position[0],position[1])
-    
+    true_velocity[i] = bike.get_velocity()
     # update time
     time_text.set_text('time = %.1f' % t)
 

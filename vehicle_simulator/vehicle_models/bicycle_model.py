@@ -119,52 +119,16 @@ class BicycleModel:
             ((self._lr**2)*np.sin(delta)**2 + (self._L**2)*np.cos(delta)**2)
         return beta, beta_dot
     
-    # def update_velocity_motion_model(self, velocity, wheel_turn_rate, dt):
-    #     delta_dot = wheel_turn_rate # front wheel turning rate 
-    #     vel_hat = velocity + (self._alpha1 * velocity**2 + self._alpha4 * delta_dot**2) * np.random.randn()
-    #     vel_hat = np.clip( vel_hat , 0 , self._vel_max )
-    #     delta_dot_hat = delta_dot + (self._alpha2 * velocity**2 + self._alpha3 * delta_dot**2) * np.random.randn()
-    #     self._delta = np.clip(self._delta + delta_dot_hat * dt, -self._delta_max, self._delta_max)
-    #     beta = np.arctan2(self._lr*np.tan(self._delta) , self._L)
-    #     self._x_dot = vel_hat*np.cos(self._theta + beta)
-    #     self._y_dot = vel_hat*np.sin(self._theta + beta)
-    #     self._theta_dot = vel_hat*np.cos(beta)*np.tan(self._delta)/self._L
-    #     self._x = self._x + self._x_dot * dt
-    #     self._y = self._y + self._y_dot * dt
-    #     self._theta = self._theta + self._theta_dot * dt
-    #     beta_dot = self._L*self._lr*self._delta_dot/ \
-    #         (((self._lr**2)*np.tan(self._delta)**2 + self._L**2)*np.cos(self._delta)**2)
-    #     self._x_ddot = vel_dot_hat*np.cos(self._theta + beta) - \
-    #         (self._theta_dot+beta_dot)*vel*np.sin(beta+self._theta)
-    #     self._y_ddot = vel_dot_hat*np.sin(self._theta + beta) + \
-    #         (self._theta_dot + beta_dot)*vel*np.cos(beta+self._theta)
-    #     self._theta_ddot = vel_dot_hat*np.cos(beta)*np.tan(self._delta) + \
-    #         vel*(self._delta_dot*np.cos(beta)/np.cos(self._delta)**2 - beta_dot*np.sin(beta)*np.tan(self._delta))
-    #     return vel_dot_hat, delta_dot_hat
+    def get_velocity(self):
+        velocity = np.sqrt(self._x_dot**2 + self._y_dot**2)
+        return velocity
+ 
 
     def getState(self):
         states = np.array([[self._x,self._y,self._theta,self._delta],
                     [self._x_dot,self._y_dot,self._theta_dot,self._delta_dot],
                     [self._x_ddot,self._y_ddot,self._theta_ddot,0]])
         return states
-
-
-# \begin{equation}
-#     \ddot{x} = \dot{\nu} \cos{(\beta + \theta)} - (\dot{\theta} + \dot{\beta}) \nu \sin{(\beta + \theta)}
-# \end{equation}
-
-# \begin{equation}
-#     \ddot{y} = \dot{\nu} \sin{(\beta + \theta)} + (\dot{\theta} + \dot{\beta}) \nu \cos{(\beta + \theta)}
-# \end{equation}
-
-# \begin{equation}
-#     \ddot{\theta} = \dot{\nu} \cos{\beta} \tan{\delta} + \nu\big{(} \dot{\delta} \cos{
-#     \beta} \sec^2\delta - \dot{\beta} \sin{\beta} \tan{\delta} \big{)}
-# \end{equation}
-
-# \begin{equation}
-#     \dot{\beta} = \frac{L l_r \dot{\delta} \sec^2\delta}{l_r^2 \tan^2 \delta + L^2}
-# \end{equation}
 
 
     def getPoints(self,xy):

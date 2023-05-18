@@ -2,14 +2,13 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from bicycle_model_2 import BicycleModel
+from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
 import os
 
 x_limits = 5
 y_limits = 5
-sec = 45
-resolution = 1000
-time_array = np.linspace(0,sec,resolution)
+sec = 90
+time_array = np.linspace(0,sec,int(sec/0.1+1))
 dt = time_array[1]
 L = 1
 lr = 0.5
@@ -31,8 +30,6 @@ bike = BicycleModel(x = 0,
                     delta_max = delta_max,
                     vel_max=5)
 
-
-
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
@@ -43,14 +40,9 @@ body_fig = plt.Polygon(bike.getBodyPoints(),fc = 'g')
 
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
-global a_c, delta_dot_c, a_x_array, a_y_array, v_x_array, v_y_array 
-a_c = (0.5*np.cos(.5*time_array))/3
-# a_c = (0.5 + 0.5*np.cos(.5*time_array))/3
-a_x_array = 0*time_array
-a_y_array = 0*time_array
-v_x_array = 0*time_array
-v_y_array = 0*time_array
-delta_dot_c = np.cos(0.1*time_array)
+global v_c, phi_c               
+v_c = (1 + 0.5*np.cos(.5*time_array))/3
+phi_c = np.cos(0.1*time_array)
 
 def init():
     #initialize animation
@@ -66,13 +58,8 @@ def animate(i):
     # x_d = 5
     # y_d = 5
     states = bike.getState() 
-    a_x_array[i] = states[2,0]
-    a_y_array[i] = states[2,1]
-    v_x_array[i] = states[1,0]
-    v_y_array[i] = states[1,1]
     t = time_array[i]
-    bike.update_acceleration_motion_model(a_c[i],delta_dot_c[i],dt)
-    # bike.update_velocity_motion_model(a_c[i],delta_dot_c[i],dt)
+    bike.update_velocity_motion_model(v_c[i], phi_c[i], dt)
     front_wheel_fig.xy = bike.getFrontWheelPoints()
     back_wheel_fig.xy = bike.getBackWheelPoints()
     body_fig.xy = bike.getBodyPoints()
@@ -88,21 +75,6 @@ animate(0)
 ani = animation.FuncAnimation(fig, animate, frames = np.size(time_array), 
                             interval = dt*100, blit = True, init_func = init, repeat = False)
 
-plt.show()
-
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-ax1.plot(time_array, v_x_array)
-ax1.set_title("X velocity")
-ax2.plot(time_array, v_y_array)
-ax2.set_title("Y velocity")
-a_x_array_discrete = (v_x_array[1:] - v_x_array[0:-1])/dt
-a_y_array_discrete = (v_y_array[1:] - v_y_array[0:-1])/dt
-ax3.plot(time_array, a_x_array)
-ax3.plot(time_array[1:], a_x_array_discrete)
-ax3.set_title("X acceleration")
-ax4.plot(time_array, a_y_array)
-ax4.plot(time_array[1:], a_y_array_discrete)
-ax4.set_title("Y acceleration")
 plt.show()
 
 # file_name = os.getcwd() + "/bike_animation.gif"
