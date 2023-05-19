@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 from unicycle_model import UnicycleModel
-from unicycle_kinematic_trajectory_tracker import UnicycleKinematicTrajectoryTracker
+from unicycle_trajectory_tracker import UnicycleTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 
@@ -23,21 +23,21 @@ num_data_points = 100
 path, time_data = bspline_gen.get_spline_data(num_data_points)
 velocity_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,1)
 acceleration_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,2)
+jerk_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points, 3)
 
 
 unicycle = UnicycleModel(x = 0, 
                          y = 0,
                          theta = np.pi/4,
-                         alpha = np.array([0.1,0.01,0.01,0.1]),
-                         dt = dt)
-controller = UnicycleKinematicTrajectoryTracker(dt = dt,
-                                                kp_p = 3, 
-                                                kp_i = 0,
-                                                kv_p = 1,
-                                                ktheta_p = 1,
-                                                v_max = 15,
-                                                omega_max = np.pi/4,
-                                                tolerance = 0.005)
+                         alpha = np.array([0.1,0.01,0.01,0.1]))
+controller = UnicycleTrajectoryTracker(k_pos = 2, 
+                                       k_vel = 1,
+                                       k_accel = 1,
+                                       k_theta = 1,
+                                       k_theta_dot = 1, 
+                                       max_vel = 10,
+                                       max_vel_dot = 10,
+                                       max_theta_dot = 3)
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
@@ -45,6 +45,7 @@ ax.grid()
 robot_fig = plt.Polygon(unicycle.getPoints(),fc = 'g')
 desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='r')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+ax.plot(path[0,:],path[1,:])
 states_array = unicycle.getState()
 
 def init():
@@ -64,18 +65,17 @@ def animate(i):
     position = path[:,i]
     velocity = velocity_data[:,i]
     acceleration = acceleration_data[:,i]
-    states_desired = np.array([position[0],position[1],None,velocity[0],velocity[1],None])
+    jerk = jerk_data[:,i]
+    desired_trajectory = np.vstack((position, velocity, acceleration, jerk))
     states = unicycle.getState()
     if i > 0:
         states_array = np.vstack((states_array,states))
-    v_c, omega_c = controller.trajectory_tracker(states, states_desired)
-    input = np.array([v_c, omega_c])
-    unicycle.velMotionModel(input)
+    a_c, omega_dot_c = controller.trajectory_tracker(states, desired_trajectory)
+    unicycle.update_acceleration_motion_model(a_c, omega_dot_c, dt)
     robot_fig.xy = unicycle.getPoints()
     # update time
     # time_text.set_text('time = %.1f' % time_array[i])
-    time_text.set_text('omega_c = %.1f' % omega_c)
-    plt.plot(path[:,0],path[:,1])
+    time_text.set_text('omega_dot_c = %.1f' % omega_dot_c)
     desired_position_fig.center = (position[0],position[1])
     return robot_fig,desired_position_fig, time_text
 

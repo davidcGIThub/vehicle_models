@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from unicycle_model import UnicycleModel
+from unicycle_model.unicycle_model import UnicycleModel
 import os
 
 x_limits = 5
@@ -15,7 +15,8 @@ unicycle = UnicycleModel(x = 0,
                     y = 0,
                     theta = np.pi/4,
                     alpha = np.array([0.1,0.01,0.1,0.01]),
-                    dt = dt)
+                    max_vel=5,
+                    max_theta_dot=0.5)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
@@ -24,9 +25,9 @@ ax.grid()
 robot_fig = plt.Polygon(unicycle.getPoints(),fc = 'g')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
-global v_c, omega_c               
-v_c = (1 + 0.5*np.cos(.5*time_array))/3
-omega_c = np.cos(0.1*time_array)
+global a_c, theta_dot_c               
+a_c = (0.5*np.cos(.5*time_array))/3
+theta_dot_c = np.cos(0.1*time_array)
 
 def init():
     #initialize animation
@@ -41,8 +42,7 @@ def animate(i):
     # y_d = 5
     states = unicycle.getState() 
     t = time_array[i]
-    input = np.array([v_c[i], omega_c[i]])
-    unicycle.velMotionModel(input)
+    unicycle.update_acceleration_motion_model(a_c[i],theta_dot_c[i],dt)
     robot_fig.xy = unicycle.getPoints()
     
     # update time

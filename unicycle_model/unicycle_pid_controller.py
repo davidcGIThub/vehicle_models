@@ -85,6 +85,11 @@ class UnicycleKinematicWaypointTracker:
         angle = (np.pi - np.abs(np.abs(desired_angle-angle) - np.pi) )
         return angle*direction
     
+    def low_pass_filter(self, value, value_prev, alpha):
+        alpha = np.clip(alpha,0,1)
+        new_value = value*alpha + (1-alpha)*value_prev
+        return new_value
+    
 
         
 

@@ -29,7 +29,7 @@ class BicycleKinematicController:
         self._L = L
         self._dt = dt
 
-    def mpc_control_accel_input(self, states, desired_states):
+    def mpc_control_accel_input(self, states, trajectory_states):
         # current states
         x = states[0,0]
         y = states[0,1]
@@ -38,14 +38,14 @@ class BicycleKinematicController:
         x_dot = states[1,0]
         y_dot = states[1,1]
         theta_dot = states[1,2]
-        #desired_states
-        x_path = desired_states[0,0]
-        y_path = desired_states[0,1]
-        x_dot_path = desired_states[1,0]
-        y_dot_path = desired_states[1,1]
-        x_ddot_path = desired_states[2,0]
-        y_ddot_path = desired_states[2,1]
-        #command computations
+        #desired trajectory states
+        x_path = trajectory_states[0,0]
+        y_path = trajectory_states[0,1]
+        x_dot_path = trajectory_states[1,0]
+        y_dot_path = trajectory_states[1,1]
+        x_ddot_path = trajectory_states[2,0]
+        y_ddot_path = trajectory_states[2,1]
+        # longitudinal acceleration computation
         x_pos_error = x_path - x
         y_pos_error = y_path - y
         x_vel_des = x_pos_error*self._k_pos + x_dot_path
@@ -56,10 +56,11 @@ class BicycleKinematicController:
         vel_des = np.linalg.norm(vel_vec_des)
         accel_vec_des = np.array([x_accel_des,y_accel_des])
         vel_dot_des = np.dot(vel_vec_des,accel_vec_des) / vel_des
-        velocity = np.sqrt(x_dot**2 + y_dot)
-        if velocity < self._vel_min:
-            vel_dot_des = (self._vel_min-velocity)/self._dt
+        # velocity = np.sqrt(x_dot**2 + y_dot)
+        # if velocity < self._vel_min:
+        #     vel_dot_des = (self._vel_min-velocity)/self._dt
         vel_dot_command = np.clip(vel_dot_des, -self._vel_dot_max,self._vel_dot_max)
+        #wheel turn rate computation
         chi_des = np.arctan2(y_vel_des, x_vel_des)
         beta_des = self.get_closest_angle(theta, chi_des) * self.find_turn_direction(theta, chi_des)
         delta_des = np.clip(np.arctan2(self._L*np.tan(beta_des), self._lr), -self._delta_max , self._delta_max) 
@@ -69,17 +70,17 @@ class BicycleKinematicController:
         delta_dot_command = delta_dot_des + delta_error * self._k_delta
         return vel_dot_command, delta_dot_command
     
-    def mpc_control_velocity_input(self, states, desired_states):
+    def mpc_control_velocity_input(self, states, trajectory_states):
         # current states
         x = states[0,0]
         y = states[0,1]
         theta = states[0,2]
         delta = states[0,3]
-        #desired_states
-        x_path = desired_states[0,0]
-        y_path = desired_states[0,1]
-        x_dot_path = desired_states[1,0]
-        y_dot_path = desired_states[1,1]
+        #desired trajectory states
+        x_path = trajectory_states[0,0]
+        y_path = trajectory_states[0,1]
+        x_dot_path = trajectory_states[1,0]
+        y_dot_path = trajectory_states[1,1]
         #command computations
         x_pos_error = x_path - x
         y_pos_error = y_path - y
