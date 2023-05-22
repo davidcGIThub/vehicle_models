@@ -10,20 +10,19 @@ y_limits = 30
 sec = 90
 time_array = np.linspace(0,sec,int(sec/0.1+1))
 dt = time_array[1]
-delta_max = np.pi/2
+max_delta = np.pi/2
 boat = BoatModel(x = 0, 
                  y = 0, 
-                 vel = 0.2,
                  theta = np.pi/2.0, 
                  delta = 0,
                  alpha = np.array([0.0,0.0,0.0,0.0]),
-                 dt = 0.1,
                  height = 1,
                  width = 0.5,
-                 delta_max = delta_max,
-                 a_max = 5,
-                 v_max = 5
+                 max_delta = max_delta,
+                 max_accel = 5,
+                 max_vel = 5
                  )
+
 
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
@@ -33,10 +32,10 @@ boat_fig = plt.Polygon(boat.getBodyPoints(),fc = 'g')
 rudder_fig = plt.Polygon(boat.getRudderPoints(),fc = 'k')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
-global v_c, omega_c               
+global v_c, delta_dot_c          
 # a_c = np.cos(0.5*time_array)/5
-a_c = time_array*0 + 0.01
-delta_c = np.cos(0.1*time_array)*delta_max
+v_c = time_array*0 + 1
+delta_dot_c = np.cos(0.2*time_array)*0.3
 # delta_c = time_array*0
 
 def init():
@@ -51,10 +50,11 @@ def animate(i):
     # propogate robot motion
     # x_d = 5
     # y_d = 5
-    # states = boat.getState() 
+    states = boat.getState() 
     # t = time_array[i]
-    input = np.array([a_c[i], delta_c[i]])
-    boat.velMotionModel(input)
+    delta_dot_com = delta_dot_c[i]
+    # delta_dot_com = 0
+    boat.update_velocity_motion_model(v_c[i], delta_dot_com, dt)
     boat_fig.xy = boat.getBodyPoints()
     rudder_fig.xy = boat.getRudderPoints()
     

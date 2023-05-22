@@ -13,8 +13,8 @@ class UnicycleModel:
                  y = 0, 
                  theta = np.pi/2.0, 
                  alpha = np.array([0.1,0.01,0.01,0.1]),
-                 height = 1,
-                 width = 0.5,
+                 height = 0.5,
+                 width = 0.25,
                  max_vel = 10,
                  max_theta_dot = 15):
         self._x = x
@@ -45,6 +45,11 @@ class UnicycleModel:
         self._x_ddot = states[2,0]
         self._y_ddot = states[2,1]
         self._theta_ddot = states[2,2]
+
+    def getState(self):
+        return np.array([[self._x, self._y, self._theta],
+                          [self._x_dot, self._y_dot, self._theta_dot],
+                          [self._x_ddot, self._y_ddot, self._theta_ddot]])
 
     def update_velocity_motion_model(self, velocity, angular_rate, dt):
         vel = velocity
@@ -80,11 +85,6 @@ class UnicycleModel:
         self._x = self._x + self._x_dot * dt
         self._y = self._y + self._y_dot * dt
         self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
-
-    def getState(self):
-        return np.array([[self._x, self._y, self._theta],
-                          [self._x_dot, self._y_dot, self._theta_dot],
-                          [self._x_ddot, self._y_ddot, self._theta_ddot]])
 
     def getPoints(self):
         R = self.getRotationMatrix(self._theta)

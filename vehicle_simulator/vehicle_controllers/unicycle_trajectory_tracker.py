@@ -52,59 +52,53 @@ class UnicycleTrajectoryTracker:
         y_vel_des = y_pos_error*self._k_pos + y_dot_traj
         x_accel_des = (x_vel_des - x_dot) * self._k_vel + x_ddot_traj
         y_accel_des = (y_vel_des - y_dot) * self._k_vel + y_ddot_traj
-        x_jerk_des = (x_accel_des - x_ddot) * self._k_accel + x_dddot_traj
-        y_jerk_des = (y_accel_des - y_ddot) * self._k_accel + y_dddot_traj
-        vel_vec_des = np.array([x_vel_des,y_vel_des])
-        vel_des = np.linalg.norm(vel_vec_des)
         accel_vec_des = np.array([x_accel_des,y_accel_des])
-        vel_dot_des = np.dot(vel_vec_des,accel_vec_des) / vel_des
+        vel_dir = np.array([np.cos(theta),np.sin(theta)])
+        vel_dot_des = np.dot(vel_dir,accel_vec_des)
         vel_dot_command = np.clip(vel_dot_des, -self._max_vel_dot, self._max_vel_dot)
         # angular acceleration computation
         theta_des = np.arctan2(y_vel_des,x_vel_des)
         theta_error = self.find_angle_error(theta,theta_des)
-        theta_dot_traj = (x_vel_des*y_accel_des - y_vel_des*x_accel_des)/(x_vel_des**2 + y_vel_des**2)
-        theta_dot_des = theta_error*self._k_theta + theta_dot_traj
-        theta_dot_error = self.find_angle_error(theta_dot,theta_dot_des)
-        theta_ddot_traj = ((x_vel_des**2 + y_vel_des**2)* (y_jerk_des*x_vel_des - x_jerk_des*y_vel_des) + \
+        theta_dot_des = (x_vel_des*y_accel_des - y_vel_des*x_accel_des)/(x_vel_des**2 + y_vel_des**2)
+        theta_dot_com = theta_error*self._k_theta + theta_dot_des
+        theta_dot_error = self.find_angle_error(theta_dot,theta_dot_com)
+        x_jerk_des = (x_accel_des - x_ddot) * self._k_accel + x_dddot_traj
+        y_jerk_des = (y_accel_des - y_ddot) * self._k_accel + y_dddot_traj
+        theta_ddot_des = ((x_vel_des**2 + y_vel_des**2)* (y_jerk_des*x_vel_des - x_jerk_des*y_vel_des) + \
             2*(x_accel_des*y_vel_des - x_vel_des*y_accel_des)*(x_vel_des*x_accel_des + y_vel_des*y_accel_des)) / \
             (x_vel_des**2 + y_vel_des**2)**2
-        theta_ddot_command = theta_dot_error * self._k_theta_dot + theta_ddot_traj
+        theta_ddot_command = theta_dot_error * self._k_theta_dot + theta_ddot_des
         return vel_dot_command, theta_ddot_command
     
     def mpc_control_vel_input(self, states, trajectory_states):
+        # Get current states
         x = states[0,0]
         y = states[0,1]
         theta = states[0,2]
         x_dot = states[1,0]
         y_dot = states[1,1]
-        # theta_dot = states[1,2]
-        # x_ddot = states[2,0]
-        # y_ddot = states[2,1]
+        # Get Desired Trajectory States
         x_traj = trajectory_states[0,0]
         y_traj = trajectory_states[0,1]
         x_dot_traj = trajectory_states[1,0]
         y_dot_traj = trajectory_states[1,1]
         x_ddot_traj = trajectory_states[2,0]
         y_ddot_traj = trajectory_states[2,1]
+        # Evaluate vel control input
         x_pos_error = x_traj - x
         y_pos_error = y_traj - y
         x_vel_des = x_pos_error*self._k_pos + x_dot_traj
         y_vel_des = y_pos_error*self._k_pos + y_dot_traj
         x_accel_des = (x_vel_des - x_dot) * self._k_vel + x_ddot_traj
         y_accel_des = (y_vel_des - y_dot) * self._k_vel + y_ddot_traj
-        # x_jerk_des = (x_accel_des - x_ddot) * self._k_accel + x_dddot_traj
-        # y_jerk_des = (y_accel_des - y_ddot) * self._k_accel + y_dddot_traj
-        # vel_vec = np.array([x_dot, y_dot])
         vel_vec_des = np.array([x_vel_des,y_vel_des])
-        # vel = np.linalg.norm(vel_vec)
-        # accel_vec_des = np.array([x_accel_des,y_accel_des])
         vel_dir = np.array([np.cos(theta),np.sin(theta)])
         vel_command = np.dot(vel_vec_des, vel_dir)
         # angular acceleration computation
         theta_des = np.arctan2(y_vel_des,x_vel_des)
         theta_error = self.find_angle_error(theta,theta_des)
-        theta_dot_traj = (x_vel_des*y_accel_des - y_vel_des*x_accel_des)/(x_vel_des**2 + y_vel_des**2)
-        theta_dot_command = theta_error*self._k_theta + theta_dot_traj
+        theta_dot_des = (x_vel_des*y_accel_des - y_vel_des*x_accel_des)/(x_vel_des**2 + y_vel_des**2)
+        theta_dot_command = theta_error*self._k_theta + theta_dot_des
         return vel_command, theta_dot_command
     
     def find_angle_error(self, angle, desired_angle):

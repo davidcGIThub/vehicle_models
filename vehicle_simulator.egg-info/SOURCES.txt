@@ -7,5 +7,7 @@ vehicle_simulator.egg-info/dependency_links.txt
 vehicle_simulator.egg-info/top_level.txt
 vehicle_simulator/vehicle_controllers/__init__.py
 vehicle_simulator/vehicle_controllers/bicycle_kinematic_controller.py
+vehicle_simulator/vehicle_controllers/unicycle_trajectory_tracker.py
 vehicle_simulator/vehicle_models/__init__.py
 vehicle_simulator/vehicle_models/bicycle_model.py
+vehicle_simulator/vehicle_models/unicycle_model.py

@@ -17,7 +17,7 @@ control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037, 
  [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])+ 1
 bspline_gen = BsplineEvaluation(control_points, 3,0,1)
 global path, velocity_data, acceleration_data
-num_data_points = 100
+num_data_points = 10000
 path, time_data = bspline_gen.get_spline_data(num_data_points)
 velocity_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,1)
 acceleration_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,2)

@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from unicycle_model import UnicycleModel
+from vehicle_simulator.vehicle_models.unicycle_model import UnicycleModel
 import os
 
 x_limits = 5

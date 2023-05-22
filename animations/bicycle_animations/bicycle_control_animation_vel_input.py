@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
-from vehicle_simulator.vehicle_controllers.bicycle_kinematic_controller import BicycleKinematicController
+from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleKinematicController
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
