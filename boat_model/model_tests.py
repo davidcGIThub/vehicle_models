@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 x = np.linspace(0,20,10000)
-c = 10
+c = 40
 # y = np.arctan((c+10)*(x))/(0.01+(x)) *(2/np.pi) * c
 y = np.arctan((x**2))/(0.001 + x) *c
 

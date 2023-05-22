@@ -97,8 +97,7 @@ class BoatModel:
         if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
             delta_dot_hat = 0
         delta = np.clip(self._delta + delta_dot_hat*dt, -self._max_delta, self._max_delta)
-        theta_dot = np.arctan((self._c_r+10)*vel_hat)/(0.01+vel_hat) \
-                    *(2/np.pi) * self._c_r * np.sin(-delta)
+        theta_dot = np.sin(-delta) * np.arctan((vel_hat**2))/(0.001 + vel_hat) * self._c_r
         vel_dot = (vel_hat - np.sqrt(self._x_dot**2 + self._y_dot**2))/dt
         self._x_ddot = vel_dot*np.cos(self._theta) - vel_hat*np.sin(self._theta)*theta_dot
         self._y_ddot = vel_dot*np.sin(self._theta) + vel_hat*np.cos(self._theta)*theta_dot
@@ -125,7 +124,6 @@ class BoatModel:
         return np.transpose(xy)
     
     def getRudderPoints(self):
-        print("delta: " , self._delta)
         xy_body_frame = np.array([[-self._height, 0, 0, -self._height],
                                   [self._width/5, self._width/5, -self._width/5, -self._width/5]])
         rudder_rotation = self.getRotationMatrix(self._delta)

@@ -18,6 +18,7 @@ boat = BoatModel(x = 0,
                  alpha = np.array([0.0,0.0,0.0,0.0]),
                  height = 1,
                  width = 0.5,
+                 c_r = 10,
                  max_delta = max_delta,
                  max_accel = 5,
                  max_vel = 5
@@ -34,7 +35,7 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 global v_c, delta_dot_c          
 # a_c = np.cos(0.5*time_array)/5
-v_c = time_array*0 + 1
+v_c = time_array*0 + 0.2
 delta_dot_c = np.cos(0.2*time_array)*0.3
 # delta_c = time_array*0
 
