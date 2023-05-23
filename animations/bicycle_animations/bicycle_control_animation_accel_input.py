@@ -23,8 +23,8 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
 scale_factor = 1.2370231646042702
-x_limits = [np.min(control_points[0,:]), np.max(control_points[0,:])]
-y_limits = [np.min(control_points[1,:]), np.max(control_points[1,:])]
+x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])*3
+y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])*3
 sec = 90
 start_time = 0
 bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
@@ -56,7 +56,8 @@ print("max_curvature: " , max_curvature)
 dir = np.arctan2(start_direction[1], start_direction[0])
 bike = BicycleModel(x = start_point[0], 
                     y = start_point[1],
-                    theta = dir,
+                    # theta = dir,
+                    theta = -np.pi/2,
                     delta = 0,
                     x_dot = 0, 
                     y_dot = 0, 
@@ -90,7 +91,7 @@ ax.plot(path[0,:],path[1,:])
 
 controller = BicycleKinematicController(k_pos = 5, 
                                         k_vel = 5,
-                                        k_delta = 5,
+                                        k_delta = 10,
                                         vel_max = v_max,
                                         delta_max = delta_max,
                                         lr = lr,

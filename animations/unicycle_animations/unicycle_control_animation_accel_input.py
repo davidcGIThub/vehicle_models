@@ -26,7 +26,8 @@ jerk_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points, 3
 end_time = bspline_gen.get_end_time()
 num_intervals = bspline_gen.get_num_intervals()
 print("end time: " , end_time)
-time_array = np.linspace(0,end_time,num_data_points*num_intervals)
+# time_array = np.linspace(0,end_time,num_data_points*num_intervals)
+time_array = time_data
 dt = time_array[1]
 
 

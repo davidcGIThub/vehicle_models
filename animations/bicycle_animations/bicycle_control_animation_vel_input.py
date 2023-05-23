@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
-from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
-from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleKinematicController
+from bicycle_model import BicycleModel
+from bicycle_trajectory_tracker import BicycleKinematicController
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -23,9 +23,8 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
 scale_factor = 1.2370231646042702
-x_limits = [np.min(control_points[0,:]), np.max(control_points[0,:])]
-y_limits = [np.min(control_points[1,:]), np.max(control_points[1,:])]
-sec = 90
+x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])
+y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])
 start_time = 0
 bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
 
@@ -49,11 +48,12 @@ dt = time_data[1]
 L = 1
 lr = 0.5
 R = 0.2
-v_max = 3
+v_max = 5
 delta_max = np.pi/6
 max_curvature = np.tan(delta_max)/L
 print("max_curvature: " , max_curvature)
-dir = np.arctan2(start_direction[1], start_direction[0])
+# dir = np.arctan2(start_direction[1], start_direction[0])
+dir = np.arctan2(0, -1)
 bike = BicycleModel(x = start_point[0], 
                     y = start_point[1],
                     theta = dir,
@@ -63,7 +63,7 @@ bike = BicycleModel(x = start_point[0],
                     R = R,
                     alpha = np.array([0.1,0.01,0.1,0.01]),
                     delta_max = delta_max,
-                    vel_max = v_max+2)
+                    vel_max = v_max)
 
 ## plotting
 
@@ -89,6 +89,7 @@ controller = BicycleKinematicController(k_pos = 10,
                                         k_delta = 10,
                                         vel_max = v_max,
                                         delta_max = delta_max,
+                                        vel_turn=1,
                                         lr = lr,
                                         L = L)
 
@@ -111,6 +112,7 @@ def animate(i):
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
+
     acceleration = acceleration_data[:,i]
     des_states = np.array([[position[0], position[1]],
                           [velocity[0], velocity[1]],
@@ -132,7 +134,7 @@ from time import time
 animate(0)
 
 ani = animation.FuncAnimation(fig, animate, frames = np.size(time_data), 
-                            interval = dt*100, blit = True, init_func = init, repeat = False)
+                            interval = dt, blit = True, init_func = init, repeat = False)
 
 plt.show()
 
@@ -140,16 +142,16 @@ x_error = true_x_position - path[0,:]
 y_error = true_y_position - path[1,:]
 position_error = np.sqrt(x_error**2 + y_error**2)
 
-plt.figure()
-plt.plot(time_data, position_error)
-plt.title("Position Error")
-plt.show()
+# plt.figure()
+# plt.plot(time_data, position_error)
+# plt.title("Position Error")
+# plt.show()
 
-velocity_error = true_velocity - np.linalg.norm(velocity_data,2,0)
-plt.figure()
-plt.plot(time_data, velocity_error)
-plt.title("Velocity Error")
-plt.show()
+# velocity_error = true_velocity - np.linalg.norm(velocity_data,2,0)
+# plt.figure()
+# plt.plot(time_data, velocity_error)
+# plt.title("Velocity Error")
+# plt.show()
 
 # file_name = os.getcwd() + "/bike_animation.gif"
 # writergif = animation.PillowWriter(fps=30) 
