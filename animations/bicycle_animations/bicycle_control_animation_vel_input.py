@@ -84,7 +84,7 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
 
-controller = BicycleKinematicController(k_pos = 10, 
+controller = BicycleKinematicController(k_pos = 5, 
                                         k_vel = 10,
                                         k_delta = 10,
                                         vel_max = v_max,

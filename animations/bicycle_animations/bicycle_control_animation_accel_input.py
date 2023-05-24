@@ -8,6 +8,7 @@ from bicycle_trajectory_tracker import BicycleKinematicController
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
+from time import sleep
 
 
 # Trajectory
@@ -23,8 +24,10 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
 scale_factor = 1.2370231646042702
-x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])*3
-y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])*3
+# scale_factor = 1
+# scale_factor = 7
+x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])
+y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])
 sec = 90
 start_time = 0
 bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
@@ -49,7 +52,7 @@ dt = time_data[1]
 L = 1
 lr = 0.5
 R = 0.2
-v_max = 3
+v_max = 5
 delta_max = np.pi/6
 max_curvature = np.tan(delta_max)/L
 print("max_curvature: " , max_curvature)
@@ -89,11 +92,12 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
 
-controller = BicycleKinematicController(k_pos = 5, 
-                                        k_vel = 5,
+controller = BicycleKinematicController(k_pos = 10, 
+                                        k_vel = 10,
                                         k_delta = 10,
                                         vel_max = v_max,
                                         delta_max = delta_max,
+                                        vel_turn=1,
                                         lr = lr,
                                         L = L)
 
@@ -129,6 +133,7 @@ def animate(i):
     desired_position_fig.center = (position[0],position[1])
     true_velocity[i] = bike.get_velocity()
     # update time
+    # sleep(0.01)
     time_text.set_text('time = %.1f' % t)
 
     return  front_wheel_fig, back_wheel_fig, body_fig,desired_position_fig, time_text
@@ -145,16 +150,16 @@ x_error = true_x_position - path[0,:]
 y_error = true_y_position - path[1,:]
 position_error = np.sqrt(x_error**2 + y_error**2)
 
-plt.figure()
-plt.plot(time_data, position_error)
-plt.title("Position Error")
-plt.show()
+# plt.figure()
+# plt.plot(time_data, position_error)
+# plt.title("Position Error")
+# plt.show()
 
-velocity_error = true_velocity - np.linalg.norm(velocity_data,2,0)
-plt.figure()
-plt.plot(time_data, velocity_error)
-plt.title("Velocity Error")
-plt.show()
+# velocity_error = true_velocity - np.linalg.norm(velocity_data,2,0)
+# plt.figure()
+# plt.plot(time_data, velocity_error)
+# plt.title("Velocity Error")
+# plt.show()
 
 # file_name = os.getcwd() + "/bike_animation.gif"
 # writergif = animation.PillowWriter(fps=30) 
