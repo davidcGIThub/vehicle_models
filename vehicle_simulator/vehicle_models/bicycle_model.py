@@ -96,7 +96,7 @@ class BicycleModel:
     def __update_states(self,x_dot,y_dot, theta_dot, delta, dt):
         self._x = self._x + x_dot * dt
         self._y = self._y + y_dot * dt
-        self._theta = self._theta + theta_dot * dt
+        self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
         self._delta = delta
 
     def __update_derivative_states(self, vel, theta, delta_dot, beta, dt):
@@ -162,4 +162,7 @@ class BicycleModel:
         rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)],
                                     [np.sin(theta), np.cos(theta)]])
         return rotation_matrix
+    
+    def wrapAngle(self,theta):
+        return np.arctan2(np.sin(theta), np.cos(theta))
 
