@@ -59,8 +59,8 @@ print("max_curvature: " , max_curvature)
 dir = np.arctan2(start_direction[1], start_direction[0])
 bike = BicycleModel(x = start_point[0], 
                     y = start_point[1],
-                    # theta = dir,
-                    theta = -np.pi/2,
+                    theta = dir,
+                    # theta = -np.pi/2,
                     delta = 0,
                     x_dot = 0, 
                     y_dot = 0, 

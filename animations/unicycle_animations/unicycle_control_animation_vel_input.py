@@ -35,7 +35,8 @@ max_vel_dot = 100
 max_theta_dot = 100
 unicycle = UnicycleModel(x = path[0,0], 
                          y = path[1,0],
-                         theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                        #  theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                         theta = -np.pi,
                          alpha = np.array([0.1,0.01,0.01,0.1]),
                          max_vel = max_vel,
                          max_theta_dot = max_theta_dot)
@@ -43,7 +44,7 @@ controller = UnicycleTrajectoryTracker(k_pos = 5,
                                        k_vel = 3,
                                        k_accel = 3,
                                        k_theta = 5,
-                                       k_theta_dot = 1, 
+                                       k_theta_dot = 5, 
                                        max_vel = max_vel,
                                        max_vel_dot = max_vel_dot,
                                        max_theta_dot = max_theta_dot)

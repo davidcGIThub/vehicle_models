@@ -3,15 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 from vehicle_simulator.vehicle_models.unicycle_model import UnicycleModel
-from vehicle_simulator.vehicle_controllers.unicycle_trajectory_tracker import UnicycleTrajectoryTracker
+from unicycle_trajectory_tracker import UnicycleTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
+from time import sleep
 
 
 # Trajectory
-control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
- [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])+ 1
-scale_factor = 1.2
+# control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
+#  [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])+ 1
+# scale_factor = 1.2
+
+control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
+   6.63348044,  4.73303911],
+ [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
+  -0.22212118,  3.53680028]])
+scale_factor = 1.2370231646042702
+# scale_factor = 0.5
+
 x_limits = [np.min(control_points[0,:])-5, np.max(control_points[0,:])+5]
 y_limits = [np.min(control_points[1,:])-5, np.max(control_points[1,:])+5]
 
@@ -31,18 +40,19 @@ time_array = time_data
 dt = time_array[1]
 
 
-max_vel = 100
-max_vel_dot = 100
-max_theta_dot = 100
+max_vel = 10
+max_vel_dot = 10
+max_theta_dot = 5
 unicycle = UnicycleModel(x = path[0,0], 
                          y = path[1,0],
-                         theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                        #  theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                         theta = -np.pi/2,
                          alpha = np.array([0.1,0.01,0.01,0.1]),
                          max_vel = max_vel,
                          max_theta_dot = max_theta_dot)
 controller = UnicycleTrajectoryTracker(k_pos = 5, 
-                                       k_vel = 3,
-                                       k_accel = 3,
+                                       k_vel = 5,
+                                       k_accel = 5,
                                        k_theta = 5,
                                        k_theta_dot = 5, 
                                        max_vel = max_vel,
@@ -71,6 +81,7 @@ def animate(i):
     # x_d = 10
     # y_d = 10
     # states_desired = np.array([x_d,y_d])
+    # sleep(0.05)
     t = time_array[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
