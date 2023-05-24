@@ -41,8 +41,8 @@ dt = time_array[1]
 
 
 max_vel = 10
-max_vel_dot = 10
-max_theta_dot = 5
+max_vel_dot = 5
+max_theta_dot = 3
 unicycle = UnicycleModel(x = path[0,0], 
                          y = path[1,0],
                         #  theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
