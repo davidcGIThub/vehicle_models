@@ -105,7 +105,7 @@ class UnicycleTrajectoryTracker:
         # vel_dot_des = np.dot(vel_dir,accel_vec_des)
         accel_vec_traj = np.array([x_ddot_traj,y_ddot_traj])
         theta_traj = np.arctan2(y_dot_traj, x_dot_traj)
-        vel_hat_traj = np.array([np.sin(theta_traj), np.cos(theta_traj)]) #* np.sqrt(x_dot_traj**2 + y_dot_traj**2)
+        vel_hat_traj = np.array([np.cos(theta_traj), np.sin(theta_traj)]) #* np.sqrt(x_dot_traj**2 + y_dot_traj**2)
         vel_dot_traj = np.dot(accel_vec_traj, vel_hat_traj)
         vel_dot_des = (vel_command - vel)*self._k_vel + vel_dot_traj
         x_jerk_des = (x_accel_des - x_ddot) * self._k_accel + x_dddot_traj

@@ -27,7 +27,7 @@ scale_factor = 1.2370231646042702
 # scale_factor = 1
 # scale_factor = 7
 x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])
-y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])
+y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])*2
 sec = 90
 start_time = 0
 bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
@@ -45,6 +45,7 @@ true_velocity = time_data*0
 # bezier_control_points = bspline_gen.get_bezier_control_points()
 start_direction = velocity_data[:,0]/np.linalg.norm(velocity_data[:,0],2,0)
 start_point = path[:,0]
+start_vel = velocity_data[:,0]
 
 
 # Bicycle Model
@@ -57,19 +58,23 @@ delta_max = np.pi/6
 max_curvature = np.tan(delta_max)/L
 print("max_curvature: " , max_curvature)
 dir = np.arctan2(start_direction[1], start_direction[0])
-bike = BicycleModel(x = start_point[0], 
+bike = BicycleModel(
+                    # x = start_point[0], 
+                    # y = start_point[1],
+                    # theta = -np.pi/2,
+                    x = start_point[0], 
                     y = start_point[1],
                     theta = dir,
-                    # theta = -np.pi/2,
                     delta = 0,
-                    x_dot = 0, 
-                    y_dot = 0, 
+                    x_dot = start_vel[0], 
+                    y_dot = start_vel[1], 
                     theta_dot = 0, 
                     delta_dot = 0,
                     lr = lr,
                     L = L,
                     R = R,
-                    alpha = np.array([0.1,0.01,0.1,0.01]),
+                    # alpha = np.array([0.1,0.01,0.1,0.01]),
+                    alpha = np.array([0,0,0,0]),
                     delta_max = delta_max,
                     vel_max = v_max+2)
 
@@ -95,9 +100,9 @@ ax.plot(path[0,:],path[1,:])
 controller = BicycleKinematicController(k_pos = 10, 
                                         k_vel = 10,
                                         k_delta = 10,
+                                        vel_dot_max = 100,
                                         vel_max = v_max,
                                         delta_max = delta_max,
-                                        vel_turn=1,
                                         lr = lr,
                                         L = L)
 
@@ -133,7 +138,7 @@ def animate(i):
     desired_position_fig.center = (position[0],position[1])
     true_velocity[i] = bike.get_velocity()
     # update time
-    # sleep(0.01)
+    # sleep(0.001)
     time_text.set_text('time = %.1f' % t)
 
     return  front_wheel_fig, back_wheel_fig, body_fig,desired_position_fig, time_text
