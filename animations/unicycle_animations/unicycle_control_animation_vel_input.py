@@ -2,8 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from vehicle_simulator.vehicle_models.unicycle_model import UnicycleModel
-from vehicle_simulator.vehicle_controllers.unicycle_trajectory_tracker import UnicycleTrajectoryTracker
+from unicycle_model import UnicycleModel
+from unicycle_trajectory_tracker import UnicycleTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 
@@ -33,9 +33,12 @@ dt = time_array[1]
 max_vel = 100
 max_vel_dot = 100
 max_theta_dot = 100
-unicycle = UnicycleModel(x = path[0,0], 
-                         y = path[1,0],
+unicycle = UnicycleModel(
+                        #  x = path[0,0], 
+                        #  y = path[1,0],
                         #  theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                         x = 5, 
+                         y = 5,
                          theta = -np.pi,
                          alpha = np.array([0.1,0.01,0.01,0.1]),
                          max_vel = max_vel,

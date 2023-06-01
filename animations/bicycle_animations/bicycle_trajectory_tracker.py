@@ -55,10 +55,9 @@ class BicycleKinematicController:
         x_vel_des = x_pos_error*self._k_pos + x_dot_traj
         y_vel_des = y_pos_error*self._k_pos + y_dot_traj
         vel_des = np.sqrt(x_vel_des**2 + y_vel_des**2)
-        vel_com = np.clip(np.linalg.norm(vel_des), 0, self._vel_max)
         # desired velocity dot
         vel = np.sqrt(x_dot**2 + y_dot**2)
-        vel_dot_des = (vel_com - vel)*self._k_vel
+        vel_dot_des = (vel_des - vel)*self._k_vel
         vel_dot_com = vel_dot_des
         # feedforward tolerance error 
         chi_traj = np.arctan2(y_dot_traj, x_dot_traj)
@@ -76,13 +75,14 @@ class BicycleKinematicController:
         # desired wheel turn rate
         chi_des = np.arctan2(y_vel_des, x_vel_des)
         beta_des = np.clip(self.find_angle_error(theta, chi_des), -np.pi/2, np.pi/2)
-        delta_des = np.clip(np.arctan2(self._L*np.tan(beta_des), self._lr), -self._delta_max , self._delta_max) 
-        delta_error = self.find_angle_error(delta,delta_des)
+        delta_des = np.arctan2(self._L*np.tan(beta_des), self._lr)
+        delta_com = np.clip(delta_des, -self._delta_max , self._delta_max) 
+        delta_error = self.find_angle_error(delta,delta_com)
         delta_dot_des = delta_error*self._k_delta
         delta_dot_com = delta_dot_des
         # feedforward for wheel turn rate
         if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
-            beta_traj = np.clip(chi_traj - theta,-np.pi/2,np.pi/2)
+            beta_traj = np.clip(self.find_angle_error(theta, chi_traj),-np.pi/2,np.pi/2)
             delta_traj = np.arctan2(self._L*np.tan(beta_traj), self._lr)
             chi_dot_traj = (x_dot_traj*y_ddot_traj - y_dot_traj*x_ddot_traj)/(y_dot_traj**2 + x_dot_traj**2)
             beta_dot_traj = chi_dot_traj - theta_dot
