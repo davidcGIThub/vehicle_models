@@ -41,7 +41,6 @@ class UnicycleTrajectoryTracker:
         x_dot = states[1,0]
         y_dot = states[1,1]
         theta_dot = states[1,2]
-        theta_ddot = states[2,2]
         # desired trajectory states
         x_traj = trajectory_states[0,0]
         y_traj = trajectory_states[0,1]

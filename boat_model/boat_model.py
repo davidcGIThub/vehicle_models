@@ -18,6 +18,7 @@ class BoatModel:
                  height = 1,
                  width = 0.5,
                  c_r = 1, #rudder constant
+                 c_b = 0.01, #boat constant
                  max_delta = np.pi/2,
                  max_vel = 5,
                  max_accel = 5):
@@ -40,6 +41,7 @@ class BoatModel:
         self._height = height
         self._width = width
         self._c_r = c_r
+        self._c_b = c_b
         self._max_delta = max_delta
         self._max_vel = max_vel
         self._max_accel = max_accel
@@ -60,33 +62,31 @@ class BoatModel:
                           [self._x_dot, self._y_dot, self._theta_dot],
                           [self._x_ddot, self._y_ddot, self._theta_ddot]])
 
+    def update_acceleration_motion_model(self,longitudinal_acceleration, rudder_steering_turn_rate,dt):
+        vel_dot = longitudinal_acceleration #acceleration
+        delta_dot = rudder_steering_turn_rate #rudder location
+        vel_dot_hat = vel_dot + (self._alpha1 * vel_dot**2 + self._alpha4 * delta_dot**2) * np.random.randn()
+        vel = np.clip( np.sqrt(self._x_dot**2 + self._y_dot**2) + vel_dot_hat*dt , 0 , self._max_vel )
+        if (vel_dot_hat > 0 and vel >= self._max_vel) or (vel_dot_hat < 0 and vel <= 0):
+            vel_dot_hat = 0
+        delta_dot_hat = delta_dot + (self._alpha2 * vel_dot**2 + self._alpha3 * delta_dot**2) * np.random.randn()
+        if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
+            delta_dot_hat = 0
+        delta = np.clip(self._delta + delta_dot_hat*dt, -self._max_delta, self._max_delta)
+        self._x_ddot = vel_dot*np.cos(self._theta) - vel*np.sin(self._theta)*self._theta_dot
+        self._y_ddot = vel_dot*np.sin(self._theta) + vel*np.cos(self._theta)*self._theta_dot
+        self._theta_ddot = self._c_r*vel_dot_hat*np.sin(delta)*np.arctan(vel**2)/(self._c_b+vel)**2 \
+            - 2*self._c_r*vel*vel_dot*np.sin(delta)/((vel**4 + 1)*(self._c_b + vel)) \
+            - self._c_r*delta_dot_hat*np.cos(delta)*np.arctan(vel**2)/(self._c_b+vel)
+        self._x_dot = vel*np.cos(self._theta)
+        self._y_dot = vel*np.sin(self._theta)
+        self._theta_dot = self._c_r * np.sin(-delta) * np.arctan((vel**2))/(self._c_b + vel)
+        self._delta_dot = delta_dot_hat
+        self._x = self._x + self._x_dot*dt
+        self._y = self._y + self._y_dot*dt
+        self._theta = self.wrapAngle(self._theta + self._theta_dot*dt)
+        self._delta = delta
 
-    # def update_acceleration_motion_model(self,u,dt):
-    #     a = u[0] #acceleration
-    #     delta = u[1] #rudder location
-    #     a_hat = a + (self.alpha1 * a**2 + self.alpha4 * delta**2) * np.random.randn()
-    #     a_hat = np.clip(a_hat, -self.a_max, self.a_max)
-    #     delta_hat = delta + (self.alpha2 * a**2 + self.alpha3 * delta**2) * np.random.randn()
-    #     self.delta = np.clip(delta_hat, -self.delta_max, self.delta_max)
-    #     self.x_prev = self.x
-    #     self.y_prev = self.y
-    #     self.vel_prev = self.vel
-    #     self.theta_prev = self.theta
-    #     self.x_dot_prev = self.x_dot
-    #     self.y_dot_prev = self.y_dot
-    #     self.theta_dot_prev = self.theta_dot
-    #     centripetal_acceleration = np.sin(-self.delta)
-    #     self.vel = self.vel_prev + a_hat*self.dt
-    #     self.vel = np.clip(self.vel, 0, self.v_max)
-    #     # centripetal_acceleration = np.sin(-self.delta)
-    #     # self.theta_dot = centripetal_acceleration / self.vel
-    #     self.theta_dot = np.arctan((self.c_r+10)*self.vel-(self.c_r+10))/(0.01+self.vel) \
-    #         *(2/np.pi) * self.c_r * np.sin(self.delta)
-    #     self.x_dot = self.vel * np.cos(self.theta)
-    #     self.y_dot = self.vel * np.sin(self.theta)
-    #     self.x = self.x + self.x_dot * self.dt
-    #     self.y = self.y + self.y_dot * self.dt
-    #     self.theta = self.wrapAngle(self.theta + self.theta_dot * dt)
 
     def update_velocity_motion_model(self,velocity, rudder_steering_turn_rate, dt):
         vel = velocity #acceleration
@@ -97,7 +97,7 @@ class BoatModel:
         if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
             delta_dot_hat = 0
         delta = np.clip(self._delta + delta_dot_hat*dt, -self._max_delta, self._max_delta)
-        theta_dot = np.sin(-delta) * np.arctan((vel_hat**2))/(0.001 + vel_hat) * self._c_r
+        theta_dot = self._c_r * np.sin(-delta) * np.arctan((vel_hat**2))/(self._c_b + vel_hat)
         vel_dot = (vel_hat - np.sqrt(self._x_dot**2 + self._y_dot**2))/dt
         self._x_ddot = vel_dot*np.cos(self._theta) - vel_hat*np.sin(self._theta)*theta_dot
         self._y_ddot = vel_dot*np.sin(self._theta) + vel_hat*np.cos(self._theta)*theta_dot
