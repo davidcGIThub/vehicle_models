@@ -8,7 +8,7 @@ import os
 x_limits = 30
 y_limits = 30
 sec = 90
-time_array = np.linspace(0,sec,1000)
+time_array = np.linspace(0,sec,10000)
 dt = time_array[1]
 max_delta = np.pi/2
 boat = BoatModel(x = 0, 

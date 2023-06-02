@@ -2,13 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 x = np.linspace(0,20,10000)
-c = 40
 # y = np.arctan((c+10)*(x))/(0.01+(x)) *(2/np.pi) * c
-y = np.arctan((x**2))/(0.001 + x) *c
+c_b = 0.001
+c_r = 6
+y = np.arctan((x**2))/(c_b + x) * c_r
 
-f = 1/(x+1) * c
+f = 1/(x+1) * c_r
 
-z = 1/x * c * (np.pi/2)
+z = 1/x * c_r * (np.pi/2)
 
 #
 
