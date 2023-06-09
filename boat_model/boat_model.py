@@ -18,6 +18,10 @@ class BoatModel:
                  y_dot = 0,
                  theta_dot = 0,
                  delta_dot = 0,
+                 x_ddot = 0,
+                 y_ddot = 0,
+                 theta_ddot = 0,
+                 delta_ddot = 0,
                  alpha = np.array([0.1,0.01,0.01,0.1]),
                  height = 0.5,
                  width = 0.25,
@@ -35,10 +39,10 @@ class BoatModel:
         self._y_dot = y_dot
         self._theta_dot = theta_dot
         self._delta_dot = delta_dot
-        self._x_ddot = 0
-        self._y_ddot = 0
-        self._theta_ddot = 0
-        self._delta_ddot = 0
+        self._x_ddot = x_ddot
+        self._y_ddot = y_ddot
+        self._theta_ddot = theta_ddot
+        self._delta_ddot = delta_ddot
         self._alpha1 = alpha[0]
         self._alpha2 = alpha[1]
         self._alpha3 = alpha[2]
@@ -118,26 +122,6 @@ class BoatModel:
         self._y = self._y + self._y_dot*dt
         self._theta = self.wrapAngle(self._theta + self._theta_dot*dt)
         self._delta = delta
-
-    def update_velocity_delta_motion_model(self,velocity, rudder_angle, dt):
-        vel = velocity #acceleration
-        delta = rudder_angle #rudder location
-        vel_hat = vel + (self._alpha1 * vel**2 + self._alpha4 * delta**2) * np.random.randn()
-        vel_hat = np.clip(vel_hat, 0, self._max_vel)
-        delta_hat = np.clip(delta + (self._alpha2 * vel**2 + self._alpha3 * delta**2) * np.random.randn(), -self._max_delta, self._max_delta)
-        theta_dot = self._c_r * np.sin(-delta_hat) * np.arctan((vel_hat**2))/(self._c_b + vel_hat)
-        vel_dot = (vel_hat - np.sqrt(self._x_dot**2 + self._y_dot**2))/dt
-        self._x_ddot = vel_dot*np.cos(self._theta) - vel_hat*np.sin(self._theta)*theta_dot
-        self._y_ddot = vel_dot*np.sin(self._theta) + vel_hat*np.cos(self._theta)*theta_dot
-        self._theta_ddot = (theta_dot - self._theta_dot)/dt
-        self._x_dot = vel_hat*np.cos(self._theta)
-        self._y_dot = vel_hat*np.sin(self._theta)
-        self._theta_dot = theta_dot
-        self._delta_dot = (delta_hat - self._delta)/dt
-        self._x = self._x + self._x_dot*dt
-        self._y = self._y + self._y_dot*dt
-        self._theta = self.wrapAngle(self._theta + self._theta_dot*dt)
-        self._delta = delta_hat
 
     def getBodyPoints(self):
         R = self.getRotationMatrix(self._theta)

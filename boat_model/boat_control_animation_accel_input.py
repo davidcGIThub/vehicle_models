@@ -17,7 +17,8 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
    6.63348044,  4.73303911],
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
-scale_factor = 1.2370231646042702
+# scale_factor = 1.2370231646042702
+scale_factor = 0.3
 bspline_gen = BsplineEvaluation(control_points, 3,0,scale_factor)
 
 x_limits = [np.min(control_points[0,:])-5, np.max(control_points[0,:])+5]
@@ -35,6 +36,7 @@ jerk_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points, 3
 start_direction = velocity_data[:,0]/np.linalg.norm(velocity_data[:,0],2,0)
 start_point = path[:,0]
 start_vel = velocity_data[:,0]
+start_accel = acceleration_data[:,0]
 
 
 # Boat Model
@@ -42,19 +44,34 @@ dt = time_data[1]
 delta_max = np.pi/4
 dir_angle = np.arctan2(start_direction[1], start_direction[0])
 
-c_r = 5
+c_r = 100
 c_b = 0.01
-max_vel = 30
-max_vel_dot = 3
+max_vel = 20
+max_vel_dot = 30
 max_delta = np.pi/2
-max_delta_dot = 20
+max_delta_dot = 50
+
+vel_start_mag = np.linalg.norm(start_vel)
+x_dot_s = start_vel[0]
+y_dot_s = start_vel[1]
+x_ddot_s = acceleration_data[0,0]
+y_ddot_s  = acceleration_data[0,1]
+theta_dot_start = (x_dot_s*y_ddot_s - y_dot_s*x_ddot_s)/(x_dot_s**2 + y_dot_s**2)
+delta_start = -np.arcsin(np.clip(theta_dot_start*(vel_start_mag+c_b)/(c_r*np.arctan2(vel_start_mag**2,1)), -1, 1))
+
 
 boat = BoatModel(x = start_point[0], 
                  y = start_point[1], 
-                 theta = dir_angle, 
+                #  theta = dir_angle, 
+                 theta = -np.pi/2,
                  delta = 0,
+                #  delta = delta_start,
+                #  x_dot = 0,
+                #  y_dot = 0,
                  x_dot = start_vel[0],
                  y_dot = start_vel[1],
+                 x_ddot = start_accel[0],
+                 y_ddot = start_accel[1],
                  alpha = np.array([0,0,0,0]),
                 #  alpha = np.array([0.1,0.01,0.01,0.1]),
                  height = 1,
@@ -81,10 +98,10 @@ ax.plot(path[0,:],path[1,:])
 
 controller = BoatTrajectoryTracker(c_r = c_r,
                                     c_b = c_b,
-                                    k_pos = 4, 
-                                    k_vel = 5,
-                                    k_theta = 3,
-                                    k_delta = 2,
+                                    k_pos = 15, 
+                                    k_vel = 15,
+                                    k_theta = 20,
+                                    k_delta = 18,
                                     max_vel = max_vel,
                                     max_vel_dot = max_vel_dot,
                                     max_delta = max_delta,
@@ -108,16 +125,16 @@ def animate(i):
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
-    print(np.sqrt(states[1,0]**2 + states[1,1]**2))
-    sleep(0.01)
+    # print(np.sqrt(states[1,0]**2 + states[1,1]**2))
+    # sleep(0.01)
     acceleration = acceleration_data[:,i]
     position = path[:,i]
     velocity = velocity_data[:,i]
     acceleration = acceleration_data[:,i]
     jerk = jerk_data[:,i]
     desired_trajectory = np.vstack((position, velocity, acceleration, jerk))
-    vel_c, delta_c = controller.mpc_control_vel_delta_input(states, desired_trajectory)
-    boat.update_velocity_delta_motion_model(vel_c, delta_c, dt)
+    vel_dot_c, delta_dot_c = controller.mpc_control_accel_input(states, desired_trajectory)
+    boat.update_acceleration_motion_model(vel_dot_c, delta_dot_c, dt)
     # sleep(0.01)
     boat_fig.xy = boat.getBodyPoints()
     rudder_fig.xy = boat.getRudderPoints()

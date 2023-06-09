@@ -20,7 +20,8 @@ class BicycleModel:
                  R = 0.2, # wheel radius
                  alpha = np.array([0.1,0.01,0.1,0.01]), # noise parameters
                  delta_max = np.pi/4,
-                 vel_max = 5):
+                 vel_max = 5,
+                 vel_dot_max = 5):
         self._x = x
         self._x_dot = x_dot
         self._x_ddot = 0
