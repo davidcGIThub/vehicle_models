@@ -31,7 +31,7 @@ class UnicycleTrajectoryTracker:
         self._max_theta_ddot = max_theta_ddot 
         self._location_fwd_tol = location_fwd_tol,
         self._heading_ffwd_tol = heading_ffwd_tol,
-
+    
     def mpc_control_accel_input(self, states, trajectory_states):
         #### Data Extraction ####
         # current states
@@ -48,8 +48,6 @@ class UnicycleTrajectoryTracker:
         y_dot_traj = trajectory_states[1,1]
         x_ddot_traj = trajectory_states[2,0]
         y_ddot_traj = trajectory_states[2,1]
-        x_dddot_traj = trajectory_states[3,0]
-        y_dddot_traj = trajectory_states[3,1]
         #### longitudinal acceleration computation ####
         # desired velocity
         x_pos_error = x_traj - x
@@ -73,85 +71,20 @@ class UnicycleTrajectoryTracker:
             accel_vec_traj = np.array([x_ddot_traj,y_ddot_traj])
             vel_dot_ffwd = np.dot(accel_vec_traj, vel_hat_traj)
             vel_dot_com = vel_dot_ffwd + vel_dot_des
-            print("ffwd: ")
         else:
             vel_dot_com = vel_dot_des
-            print("not ffwd: ")
         vel_dot_com_sat = np.clip(vel_dot_com, -self._max_vel_dot, self._max_vel_dot)
         #### angular acceleration computation ####
         # desired angular acceleration
         theta_des = np.arctan2(y_dot_des,x_dot_des)
         theta_error = self.find_angle_error(theta,theta_des)
         theta_dot_des = theta_error*self._k_theta
-        x_ddot_des = (x_dot_des - x_dot)*self._k_vel + x_ddot_traj
-        y_ddot_des = (y_dot_des - y_dot)*self._k_vel + y_ddot_traj
-        theta_dot_ffwd = (x_dot_des*y_ddot_des - y_dot_des*x_ddot_des)/(x_dot_des**2 + y_dot_des**2)
-        theta_dot_com = theta_dot_ffwd + theta_dot_des
-        theta_ddot_des = (theta_dot_com - theta_dot) * self._k_theta_dot 
-        # feedforward angular acceleration
+        theta_dot_ffwd = (x_dot_traj*y_ddot_traj - y_dot_traj*x_ddot_traj)/(x_dot_traj**2 + y_dot_traj**2)
         if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
-            theta_ddot_ffwd = ((x_dot_traj**2 + y_dot_traj**2)* (y_dddot_traj*x_dot_traj - x_dddot_traj*y_dot_traj) + \
-                2*(x_ddot_traj*y_dot_traj - x_dot_traj*y_ddot_traj)*(x_dot_traj*x_ddot_traj + y_dot_traj*y_ddot_traj)) / \
-                (x_dot_traj**2 + y_dot_traj**2)**2
-            theta_ddot_com = theta_ddot_ffwd + theta_ddot_des
+            theta_dot_ffwd = (x_dot_traj*y_ddot_traj - y_dot_des*x_ddot_traj)/(x_dot_traj**2 + y_dot_traj**2)
+            theta_dot_com = theta_dot_ffwd + theta_dot_des
         else:
-            theta_ddot_com = theta_ddot_des
-        theta_ddot_com_sat = np.clip(theta_ddot_com, -self._max_theta_ddot, self._max_theta_ddot) 
-        return vel_dot_com_sat, theta_ddot_com_sat 
-    
-    def mpc_control_accel_input_ang_rate(self, states, trajectory_states):
-        #### Data Extraction ####
-        # current states
-        x = states[0,0]
-        y = states[0,1]
-        theta = states[0,2]
-        x_dot = states[1,0]
-        y_dot = states[1,1]
-        theta_dot = states[1,2]
-        # desired trajectory states
-        x_traj = trajectory_states[0,0]
-        y_traj = trajectory_states[0,1]
-        x_dot_traj = trajectory_states[1,0]
-        y_dot_traj = trajectory_states[1,1]
-        x_ddot_traj = trajectory_states[2,0]
-        y_ddot_traj = trajectory_states[2,1]
-        #### longitudinal acceleration computation ####
-        # desired velocity
-        x_pos_error = x_traj - x
-        y_pos_error = y_traj - y
-        x_dot_des = (x_pos_error)*self._k_pos + x_dot_traj
-        y_dot_des = (y_pos_error)*self._k_pos + y_dot_traj
-        # vel_des = np.sqrt(x_dot_des**2 + y_dot_des**2)
-        vel_vec_des = np.array([x_dot_des,y_dot_des])
-        vel_hat = np.array([np.cos(theta), np.sin(theta)])
-        vel_des = np.dot(vel_vec_des, vel_hat)
-        # desired velocity dot
-        vel = np.sqrt(x_dot**2 + y_dot**2)
-        vel_dot_des = (vel_des - vel)*self._k_vel
-        # feedforward tolerance error 
-        theta_traj = np.arctan2(y_dot_traj, x_dot_traj)
-        heading_error = np.abs(self.find_angle_error(theta, theta_traj))
-        location_error = np.sqrt(x_pos_error**2 + y_pos_error**2)
-        # velocity dot feedforward 
-        if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
-            vel_hat_traj = np.array([np.cos(theta_traj), np.sin(theta_traj)])
-            accel_vec_traj = np.array([x_ddot_traj,y_ddot_traj])
-            vel_dot_ffwd = np.dot(accel_vec_traj, vel_hat_traj)
-            vel_dot_com = vel_dot_ffwd + vel_dot_des
-            print("ffwd: ")
-        else:
-            vel_dot_com = vel_dot_des
-            print("not ffwd: ")
-        vel_dot_com_sat = np.clip(vel_dot_com, -self._max_vel_dot, self._max_vel_dot)
-        #### angular acceleration computation ####
-        # desired angular acceleration
-        theta_des = np.arctan2(y_dot_des,x_dot_des)
-        theta_error = self.find_angle_error(theta,theta_des)
-        theta_dot_des = theta_error*self._k_theta
-        x_ddot_des = (x_dot_des - x_dot)*self._k_vel + x_ddot_traj
-        y_ddot_des = (y_dot_des - y_dot)*self._k_vel + y_ddot_traj
-        theta_dot_ffwd = (x_dot_des*y_ddot_des - y_dot_des*x_ddot_des)/(x_dot_des**2 + y_dot_des**2)
-        theta_dot_com = theta_dot_ffwd + theta_dot_des
+            theta_dot_com = theta_dot_des
         theta_dot_com_sat = np.clip(theta_dot_com, -self._max_theta_dot, self._max_theta_dot)
         return vel_dot_com_sat, theta_dot_com_sat 
 

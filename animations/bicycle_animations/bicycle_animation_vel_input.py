@@ -14,7 +14,7 @@ L = 1
 lr = 0.5
 R = 0.2
 v_max = 5
-delta_max = np.pi/4
+delta_max = np.pi/2
 bike = BicycleModel(x = 0, 
                     y = 0,
                     theta = np.pi/4,
@@ -42,7 +42,8 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 global v_c, phi_c               
 v_c = (1 + 0.5*np.cos(.5*time_array))/3
-phi_c = np.cos(0.1*time_array)
+# phi_c = np.cos(0.1*time_array)
+phi_c = 2
 
 def init():
     #initialize animation
@@ -59,7 +60,7 @@ def animate(i):
     # y_d = 5
     states = bike.getState() 
     t = time_array[i]
-    bike.update_velocity_motion_model(v_c[i], phi_c[i], dt)
+    bike.update_velocity_motion_model(v_c[i], phi_c, dt)
     front_wheel_fig.xy = bike.getFrontWheelPoints()
     back_wheel_fig.xy = bike.getBackWheelPoints()
     body_fig.xy = bike.getBodyPoints()

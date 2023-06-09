@@ -18,8 +18,8 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
    6.63348044,  4.73303911],
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
-scale_factor = 1.2370231646042702
-# scale_factor = 0.5
+# scale_factor = 1.2370231646042702
+scale_factor = 0.5
 
 x_limits = [np.min(control_points[0,:])-5, np.max(control_points[0,:])+5]
 y_limits = [np.min(control_points[1,:])-5, np.max(control_points[1,:])+5]
@@ -38,37 +38,30 @@ print("end time: " , end_time)
 # time_array = np.linspace(0,end_time,num_data_points*num_intervals)
 time_array = time_data
 dt = time_array[1]
-x_dot_traj = velocity_data[0,0]
-y_dot_traj = velocity_data[1,0]
-x_ddot_traj = acceleration_data[0,0]
-y_ddot_traj = acceleration_data[1,0]
-theta_dot_traj_start = (x_dot_traj*y_ddot_traj - y_dot_traj*x_ddot_traj)/(x_dot_traj**2 + y_dot_traj**2)
-max_vel = 15
-max_vel_dot = 10
-max_theta_dot = 10
-max_theta_ddot = 50
+
+
+max_vel = 10
+max_vel_dot = 5
+max_theta_dot = 5
 unicycle = UnicycleModel(x = path[0,0], 
                          y = path[1,0],
+                         theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
+                        #  theta = -np.pi/2,
                          x_dot = velocity_data[0,0],
                          y_dot = velocity_data[1,0],
-                         theta_dot = theta_dot_traj_start,
-                        #  theta = np.arctan2(velocity_data[1,0],velocity_data[0,0]),
-                         theta = -np.pi/2,
                         #  alpha = np.array([0.1,0.01,0.01,0.1]),
                          alpha = np.array([0,0,0,0]),
                          max_vel = max_vel,
-                         max_theta_dot = max_theta_dot,
-                         max_theta_ddot = max_theta_ddot)
+                         max_theta_dot = max_theta_dot)
 controller = UnicycleTrajectoryTracker(k_pos = 5, 
                                        k_vel = 8,
-                                       k_theta = 10,
-                                       k_theta_dot = 15, 
+                                       k_theta = 8,
+                                       k_theta_dot = 5, 
                                        location_fwd_tol = 2,
                                        heading_ffwd_tol = 0.3,
                                        max_vel = max_vel,
                                        max_vel_dot = max_vel_dot,
-                                       max_theta_dot = max_theta_dot,
-                                       max_theta_ddot = max_theta_ddot)
+                                       max_theta_dot = max_theta_dot)
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(x_limits), ylim=(y_limits))
@@ -92,7 +85,7 @@ def animate(i):
     # x_d = 10
     # y_d = 10
     # states_desired = np.array([x_d,y_d])
-    # sleep(0.1)
+    # sleep(0.02)
     t = time_array[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
@@ -102,8 +95,8 @@ def animate(i):
     states = unicycle.getState()
     # if i > 0:
     #     states_array = np.vstack((states_array,states))
-    a_c, omega_dot_c = controller.mpc_control_accel_input(states, desired_trajectory)
-    unicycle.update_acceleration_motion_model(a_c, omega_dot_c, dt)
+    a_c, omega_dot = controller.mpc_control_accel_input(states, desired_trajectory)
+    unicycle.update_acceleration_motion_model(a_c, omega_dot, dt)
     robot_fig.xy = unicycle.getPoints()
     # update time
     # time_text.set_text('time = %.1f' % time_array[i])

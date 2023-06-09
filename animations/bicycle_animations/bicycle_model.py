@@ -104,6 +104,10 @@ class BicycleModel:
         self._y_dot = vel*np.sin(theta + beta)
         self._delta = np.clip(self._delta + delta_dot * dt, -self._delta_max, self._delta_max)
         self._theta_dot = vel*np.cos(beta)*np.tan(self._delta)/self._L
+        print("vel: " , vel)
+        print("np.cos(beta): " , np.cos(beta))
+        print("self._L : " , self._L)
+        print("np.tan(self._delta): " , np.tan(self._delta))
     
     def __update_second_derivative_states(self, theta, theta_dot, delta, delta_dot, beta, beta_dot, vel, vel_dot):
         self._x_ddot = vel_dot*np.cos(theta + beta) - \

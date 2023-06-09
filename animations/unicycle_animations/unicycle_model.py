@@ -72,26 +72,7 @@ class UnicycleModel:
         self._y = self._y + self._y_dot * dt
         self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
 
-    def update_acceleration_motion_model(self, longitudinal_acceleration, angular_acceleration, dt):
-        vel_dot = longitudinal_acceleration
-        theta_ddot = angular_acceleration
-        vel_dot_hat = vel_dot + (self._alpha1 * vel_dot**2 + self._alpha2 * theta_ddot**2) * np.random.randn()
-        vel = np.clip( np.sqrt(self._x_dot**2 + self._y_dot**2) + vel_dot_hat*dt , 0 , self._max_vel )
-        if (vel_dot_hat > 0 and vel >= self._max_vel) or (vel_dot_hat < 0 and vel <= 0):
-            vel_dot_hat = 0
-        theta_ddot_hat = np.clip(theta_ddot + (self._alpha3 * vel_dot**2 + self._alpha4 * theta_ddot**2) * np.random.randn(),-self._max_theta_ddot,self._max_theta_ddot)
-        theta_dot = np.clip(self._theta_dot + theta_ddot_hat*dt, -self._max_theta_dot, self._max_theta_dot)
-        self._x_ddot = vel_dot_hat*np.cos(self._theta) - vel*np.sin(self._theta)*theta_dot
-        self._y_ddot = vel_dot_hat*np.sin(self._theta) + vel*np.cos(self._theta)*theta_dot
-        self._theta_ddot = theta_ddot_hat
-        self._x_dot = vel * np.cos(self._theta)
-        self._y_dot = vel * np.sin(self._theta)
-        self._theta_dot = theta_dot
-        self._x = self._x + self._x_dot * dt
-        self._y = self._y + self._y_dot * dt
-        self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
-
-    def update_acceleration_ang_rate_motion_model(self, longitudinal_acceleration, angular_rate, dt):
+    def update_acceleration_motion_model(self, longitudinal_acceleration, angular_rate, dt):
         vel_dot = longitudinal_acceleration
         theta_dot = angular_rate
         vel_dot_hat = vel_dot + (self._alpha1 * vel_dot**2 + self._alpha2 * theta_dot**2) * np.random.randn()

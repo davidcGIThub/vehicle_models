@@ -44,7 +44,7 @@ dir_angle = np.arctan2(start_direction[1], start_direction[0])
 
 c_r = 5
 c_b = 0.01
-max_vel = 10
+max_vel = 30
 max_vel_dot = 3
 max_delta = np.pi/2
 max_delta_dot = 20
@@ -55,7 +55,8 @@ boat = BoatModel(x = start_point[0],
                  delta = 0,
                  x_dot = start_vel[0],
                  y_dot = start_vel[1],
-                 alpha = np.array([0.1,0.01,0.01,0.1]),
+                 alpha = np.array([0,0,0,0]),
+                #  alpha = np.array([0.1,0.01,0.01,0.1]),
                  height = 1,
                  width = 0.5,
                  c_r = c_r, #rudder constant
@@ -78,8 +79,8 @@ desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='r')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
-controller = BoatTrajectoryTracker(c_r = 2/np.pi,
-                                    c_b = 0.01,
+controller = BoatTrajectoryTracker(c_r = c_r,
+                                    c_b = c_b,
                                     k_pos = 4, 
                                     k_vel = 5,
                                     k_theta = 3,
