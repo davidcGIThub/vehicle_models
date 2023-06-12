@@ -2,8 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from boat_model import BoatModel
-from boat_trajectory_tracker import BoatTrajectoryTracker
+from vehicle_simulator.vehicle_models.boat_model import BoatModel
+from vehicle_simulator.vehicle_controllers.boat_trajectory_tracker import BoatTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 from time import sleep

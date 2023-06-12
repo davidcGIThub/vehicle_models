@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
-from bicycle_trajectory_tracker import BicycleTrajectoryTracker
-# from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleTrajectoryTracker
+from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
+from time import sleep
 
 
 # Trajectory
@@ -23,13 +23,16 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
    6.63348044,  4.73303911],
  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
   -0.22212118,  3.53680028]])
-scale_factor = 5
+scale_factor = 1.2370231646042702
+# scale_factor = 1
+# scale_factor = 7
 x_limits = np.array([np.min(control_points[0,:]), np.max(control_points[0,:])])
-y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])
+y_limits = np.array([np.min(control_points[1,:]), np.max(control_points[1,:])])*2
+sec = 90
 start_time = 0
 bspline_gen = BsplineEvaluation(control_points, 3,start_time,scale_factor)
 
-global path, velocity_data, acceleration_data, true_x_position, true_y_position, true_velocity, prev_states
+global path, velocity_data, acceleration_data, true_x_position, true_y_position, true_velocity
 num_data_points = 100
 path, time_data = bspline_gen.get_spline_data(num_data_points)
 velocity_data, time_data = bspline_gen.get_spline_derivative_data(num_data_points,1)
@@ -42,6 +45,7 @@ true_velocity = time_data*0
 # bezier_control_points = bspline_gen.get_bezier_control_points()
 start_direction = velocity_data[:,0]/np.linalg.norm(velocity_data[:,0],2,0)
 start_point = path[:,0]
+start_vel = velocity_data[:,0]
 
 
 # Bicycle Model
@@ -50,22 +54,31 @@ L = 1
 lr = 0.5
 R = 0.2
 v_max = 5
+vel_dot_max = 5
 delta_max = np.pi/6
 max_curvature = np.tan(delta_max)/L
 print("max_curvature: " , max_curvature)
-# dir = np.arctan2(start_direction[1], start_direction[0])
-dir = np.arctan2(0, -1)
-bike = BicycleModel(x = start_point[0], 
+dir = np.arctan2(start_direction[1], start_direction[0])
+bike = BicycleModel(
+                    x = start_point[0], 
                     y = start_point[1],
-                    theta = dir,
+                    theta = -np.pi/2,
+                    # x = start_point[0], 
+                    # y = start_point[1],
+                    # theta = dir,
                     delta = 0,
+                    x_dot = start_vel[0], 
+                    y_dot = start_vel[1], 
+                    theta_dot = 0, 
+                    delta_dot = 0,
                     lr = lr,
                     L = L,
                     R = R,
-                    alpha = np.array([0,0,0,0]),
                     # alpha = np.array([0.1,0.01,0.1,0.01]),
+                    alpha = np.array([0,0,0,0]),
                     delta_max = delta_max,
-                    vel_max = v_max)
+                    vel_max = v_max+2,
+                    vel_dot_max= vel_dot_max)
 
 ## plotting
 
@@ -86,18 +99,16 @@ time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
 
 
-controller = BicycleTrajectoryTracker(kp_pos = 1.7, 
-                                      kd_pos = 1,
-                                      kp_vel = 10,
-                                      kp_delta = 10,
-                                      kd_delta = 0,
-                                      vel_max = v_max,
-                                      delta_max = delta_max,
-                                      lr = lr,
-                                      L = L,
-                                      location_fwd_tol = 5,
-                                      heading_ffwd_tol = 0.3,)
-prev_states = bike.getState()
+controller = BicycleTrajectoryTracker(k_pos = 10, 
+                                        k_vel = 10,
+                                        k_delta = 10,
+                                        vel_dot_max = vel_dot_max,
+                                        vel_max = v_max,
+                                        delta_max = delta_max,
+                                        lr = lr,
+                                        L = L)
+
+
 
 def init():
     #initialize animation
@@ -109,7 +120,7 @@ def init():
     return front_wheel_fig, back_wheel_fig, body_fig, desired_position_fig, time_text
 
 def animate(i):
-    global bike, controller, path, velocity_data, acceleration_data, prev_states
+    global bike, controller, path, velocity_data, acceleration_data
     # propogate robot motion
     states = bike.getState() 
     true_x_position[i] = states[0,0]
@@ -117,20 +128,19 @@ def animate(i):
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
-
     acceleration = acceleration_data[:,i]
-    des_states = np.array([[position[0], position[1]],
-                          [velocity[0], velocity[1]],
-                          [acceleration[0], acceleration[1]]])
-    v_c1, phi_c1 = controller.mpc_control_velocity_input(states, prev_states, des_states, dt)
-    v_hat, phi_hat = bike.update_velocity_motion_model(v_c1,phi_c1,dt)
-    true_velocity[i] = v_hat
+    desired_states = np.vstack((position, velocity, acceleration))
+    vel_dot, delta_dot = controller.mpc_control_accel_input(states, desired_states)
+    # v_c1, phi_c1 = controller.p_control(states[0], states[1], states[2], states[3], position[0], position[1],.01)
+    # input = np.array([v_c[i], phi_c[i]])
+    v_dot_hat, delta_dot_hat = bike.update_acceleration_motion_model(vel_dot, delta_dot, dt)
     front_wheel_fig.xy = bike.getFrontWheelPoints()
     back_wheel_fig.xy = bike.getBackWheelPoints()
     body_fig.xy = bike.getBodyPoints()
     desired_position_fig.center = (position[0],position[1])
-    prev_states = states
+    true_velocity[i] = bike.get_velocity()
     # update time
+    # sleep(0.001)
     time_text.set_text('time = %.1f' % t)
 
     return  front_wheel_fig, back_wheel_fig, body_fig,desired_position_fig, time_text
@@ -139,7 +149,7 @@ from time import time
 animate(0)
 
 ani = animation.FuncAnimation(fig, animate, frames = np.size(time_data), 
-                            interval = dt, blit = True, init_func = init, repeat = False)
+                            interval = dt*100, blit = True, init_func = init, repeat = False)
 
 plt.show()
 

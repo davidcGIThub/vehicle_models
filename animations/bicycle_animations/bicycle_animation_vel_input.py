@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from bicycle_model import BicycleModel
+from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
 import os
 
 x_limits = 5

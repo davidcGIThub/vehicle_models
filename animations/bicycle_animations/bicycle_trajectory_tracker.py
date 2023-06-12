@@ -5,12 +5,14 @@ from matplotlib.text import get_rotation
 import numpy as np
 from scipy.optimize import fsolve
 
-class BicycleKinematicController:
+class BicycleTrajectoryTracker:
 
     def __init__(self, 
-                 k_pos = 1, 
-                 k_vel = 1,
-                 k_delta = 1,
+                 kp_pos = 1,
+                 kd_pos = 1, 
+                 kp_vel = 1,
+                 kp_delta = 1,
+                 kd_delta = 1,
                  vel_max = 7,
                  vel_dot_max = 10,
                  delta_max = np.pi/4,
@@ -19,9 +21,11 @@ class BicycleKinematicController:
                  lr = 0.5,
                  L = 1,
                  dt = 0.1,):
-        self._k_pos = k_pos
-        self._k_vel = k_vel
-        self._k_delta = k_delta
+        self._kp_pos = kp_pos
+        self._kd_pos = kd_pos
+        self._kp_vel = kp_vel
+        self._kp_delta = kp_delta
+        self._kd_delta = kd_delta
         self._vel_max = vel_max
         self._vel_dot_max = vel_dot_max
         self._delta_max = delta_max
@@ -31,7 +35,7 @@ class BicycleKinematicController:
         self._location_fwd_tol = location_fwd_tol
         self._heading_ffwd_tol = heading_ffwd_tol
 
-    def mpc_control_accel_input(self, states, trajectory_states):
+    def mpc_control_accel_input(self, states, previous_states, trajectory_states):
         #### Data Extraction ####
         # current states
         x = states[0,0]
@@ -52,12 +56,12 @@ class BicycleKinematicController:
         # desired velocity
         x_pos_error = x_traj - x
         y_pos_error = y_traj - y
-        x_vel_des = x_pos_error*self._k_pos + x_dot_traj
-        y_vel_des = y_pos_error*self._k_pos + y_dot_traj
+        x_vel_des = x_pos_error*self._kp_pos + x_dot_traj
+        y_vel_des = y_pos_error*self._kp_pos + y_dot_traj
         vel_des = np.sqrt(x_vel_des**2 + y_vel_des**2)
         # desired velocity dot
         vel = np.sqrt(x_dot**2 + y_dot**2)
-        vel_dot_des = (vel_des - vel)*self._k_vel
+        vel_dot_des = (vel_des - vel)*self._kp_vel
         vel_dot_com = vel_dot_des
         # feedforward tolerance error 
         chi_traj = np.arctan2(y_dot_traj, x_dot_traj)
@@ -78,7 +82,7 @@ class BicycleKinematicController:
         delta_des = np.arctan2(self._L*np.tan(beta_des), self._lr)
         delta_com = np.clip(delta_des, -self._delta_max , self._delta_max) 
         delta_error = self.find_angle_error(delta,delta_com)
-        delta_dot_des = delta_error*self._k_delta
+        delta_dot_des = delta_error*self._kp_delta
         delta_dot_com = delta_dot_des
         # feedforward for wheel turn rate
         if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
@@ -90,30 +94,50 @@ class BicycleKinematicController:
             delta_dot_com = delta_dot_ffwd + delta_dot_des
         return vel_dot_com, delta_dot_com
     
-    def mpc_control_velocity_input(self, states, trajectory_states):
+    def mpc_control_velocity_input(self, states, previous_states, trajectory_states, dt):
         # current states
         x = states.item(0,0)
         y = states.item(0,1)
         theta = states.item(0,2)
         delta = states.item(0,3)
+        x_dot = states.item(1,0)
+        y_dot = states.item(1,1)
+        theta_dot = states.item(1,2)
+        delta_dot = states.item(1,3)
+        # previous states
+        x_prev = previous_states.item(0,0)
+        y_prev = previous_states.item(0,1)
+        theta_prev = previous_states.item(0,2)
+        delta_prev = previous_states.item(0,3)
         #desired trajectory states
         x_traj = trajectory_states.item(0,0)
         y_traj = trajectory_states.item(0,1)
         x_dot_traj = trajectory_states.item(1,0)
         y_dot_traj = trajectory_states.item(1,1)
-        #velocity command computations
+        # feedforward tolerance error 
         x_pos_error = x_traj - x
         y_pos_error = y_traj - y
-        x_vel_des = x_pos_error*self._k_pos + x_dot_traj
-        y_vel_des = y_pos_error*self._k_pos + y_dot_traj
-        vel_vec_des = np.array([x_vel_des,y_vel_des])
+        chi_traj = np.arctan2(y_dot_traj, x_dot_traj)
+        chi = np.arctan2(y_dot, x_dot)
+        heading_error = np.abs(self.find_angle_error(chi, chi_traj))
+        location_error = np.sqrt(x_pos_error**2 + y_pos_error**2)
+        #velocity command computations
+        x_vel_des = x_pos_error*self._kp_pos - (x - x_prev)/dt*self._kd_pos 
+        y_vel_des = y_pos_error*self._kp_pos - (y - y_prev)/dt*self._kd_pos
+        if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
+            x_vel_com = x_dot_traj + x_vel_des
+            y_vel_com = y_dot_traj + y_vel_des
+        else:
+            x_vel_com = x_vel_des
+            y_vel_com = y_vel_des
+        vel_vec_des = np.array([x_vel_com,y_vel_com])
         vel_command = np.clip(np.linalg.norm(vel_vec_des), 0, self._vel_max)
         # wheel turn rate computations
-        chi_des = np.arctan2(y_vel_des, x_vel_des)
+        chi_des = np.arctan2(y_vel_com, x_vel_com)
         beta_des = np.clip(self.find_angle_error(theta, chi_des), -np.pi/2, np.pi/2)
         delta_des = np.clip(np.arctan2(self._L*np.tan(beta_des), self._lr), -self._delta_max , self._delta_max) 
         delta_error = self.find_angle_error(delta, delta_des)
-        delta_dot_command = delta_error * self._k_delta
+        delta_dot_command = delta_error * self._kp_delta - (delta - delta_prev)/dt*self._kd_delta
         return vel_command, delta_dot_command
     
     def find_angle_error(self, angle, desired_angle):
