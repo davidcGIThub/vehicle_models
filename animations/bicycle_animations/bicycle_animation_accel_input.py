@@ -28,8 +28,8 @@ bike = BicycleModel(x = 0,
                     L = L,
                     R = R,
                     alpha = np.array([0.1,0.01,0.1,0.01]),
-                    delta_max = delta_max,
-                    vel_max=5)
+                    max_delta = delta_max,
+                    max_vel=5)
 
 
 
@@ -37,9 +37,9 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
 ax.grid()
-front_wheel_fig = plt.Polygon(bike.getFrontWheelPoints(),fc = 'k')
-back_wheel_fig = plt.Polygon(bike.getBackWheelPoints(),fc = 'k')
-body_fig = plt.Polygon(bike.getBodyPoints(),fc = 'g')
+front_wheel_fig = plt.Polygon(bike.get_front_wheel_points(),fc = 'k')
+back_wheel_fig = plt.Polygon(bike.get_back_wheel_points(),fc = 'k')
+body_fig = plt.Polygon(bike.get_body_points(),fc = 'g')
 
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
@@ -61,11 +61,11 @@ def init():
     return front_wheel_fig, back_wheel_fig, body_fig, time_text
 
 def animate(i):
-    global bike, controller, traj_gen
+    global bike
     # propogate robot motion
     # x_d = 5
     # y_d = 5
-    states = bike.getState() 
+    states = bike.get_state() 
     a_x_array[i] = states[2,0]
     a_y_array[i] = states[2,1]
     v_x_array[i] = states[1,0]
@@ -73,9 +73,9 @@ def animate(i):
     t = time_array[i]
     bike.update_acceleration_motion_model(a_c[i],delta_dot_c[i],dt)
     # bike.update_velocity_motion_model(a_c[i],delta_dot_c[i],dt)
-    front_wheel_fig.xy = bike.getFrontWheelPoints()
-    back_wheel_fig.xy = bike.getBackWheelPoints()
-    body_fig.xy = bike.getBodyPoints()
+    front_wheel_fig.xy = bike.get_front_wheel_points()
+    back_wheel_fig.xy = bike.get_back_wheel_points()
+    body_fig.xy = bike.get_body_points()
     
     # update time
     time_text.set_text('time = %.1f' % time_array[i])

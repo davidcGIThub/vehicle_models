@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
 from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleTrajectoryTracker
-from vehicle_simulator.vehicle_animators.bicycle_trajectory_animation import BicycleTrajectoryAnimation, TrajectoryData
+from vehicle_simulator.vehicle_animators.vehicle_trajectory_tracking_animation import VehicleTrajectoryTrackingSimulator, TrajectoryData
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -47,14 +47,13 @@ dt = time_data[1]
 L = 1
 l_r = 0.5
 R = 0.2
-max_velocity = 3
+max_velocity = 5
 max_delta = np.pi/6
 max_curvature = np.tan(max_delta)/L
-max_acceleration = 2.5
+max_acceleration = 1
 
-bike = BicycleModel(
-                    x = start_point[0], 
-                    y = start_point[1],
+bike = BicycleModel(x = start_point[0], 
+                    y = start_point[1]-5,
                     theta = start_heading,
                     delta = 0,
                     x_dot = start_vel[0], 
@@ -64,25 +63,23 @@ bike = BicycleModel(
                     lr = l_r,
                     L = L,
                     R = R,
-                    alpha = np.array([0.1,0.01,0.1,0.01]),
+                    alpha = np.array([1,0.1,1,0.1]),
                     max_delta = max_delta,
                     max_vel = max_velocity,
                     max_vel_dot =max_acceleration)
 
-controller = BicycleTrajectoryTracker(k_pos = 10, 
-                                        k_vel = 10,
-                                        k_delta = 10,
+controller = BicycleTrajectoryTracker(k_pos = 2, 
+                                        k_vel = 3,
+                                        k_delta = 3,
                                         max_vel_dot = max_acceleration,
                                         max_vel = max_velocity,
                                         max_delta = max_delta,
                                         lr = l_r,
                                         L = L)
 
-
-bike_traj_anim = BicycleTrajectoryAnimation()
-traj_data = TrajectoryData(location_data, velocity_data, acceleration_data, 
-                           jerk_data, curvature_data, angular_rate_data, 
-                           centripetal_acceleration_data, longitudinal_acceleration_data,
-                           time_data)
-bike_traj_anim.animate_trajectory_following(bike, controller, traj_data, animate = False,
-                                            max_turn_value=max_curvature)
+bike_traj_sim = VehicleTrajectoryTrackingSimulator(bike, controller)
+des_traj_data = TrajectoryData(location_data, velocity_data, acceleration_data, 
+                           jerk_data, time_data)
+vehicle_traj_data = bike_traj_sim.run_simulation(des_traj_data)
+bike_traj_sim.plot_simulation_dynamics(des_traj_data, vehicle_traj_data, max_velocity, 
+                                       max_acceleration, max_curvature, "curvature")
