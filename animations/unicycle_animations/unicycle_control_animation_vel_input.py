@@ -2,8 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from unicycle_model import UnicycleModel
-from unicycle_trajectory_tracker import UnicycleTrajectoryTracker
+from vehicle_simulator.vehicle_models.unicycle_model import UnicycleModel
+from vehicle_simulator.vehicle_controllers.unicycle_trajectory_tracker import UnicycleTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 
@@ -55,11 +55,11 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(x_limits), ylim=(y_limits))
 ax.grid()
-robot_fig = plt.Polygon(unicycle.getPoints(),fc = 'g')
+robot_fig = plt.Polygon(unicycle.get_body_points(),fc = 'g')
 desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='r')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 ax.plot(path[0,:],path[1,:])
-states_array = unicycle.getState()
+states_array = unicycle.get_state()
 
 def init():
     #initialize animation
@@ -80,12 +80,13 @@ def animate(i):
     acceleration = acceleration_data[:,i]
     jerk = jerk_data[:,i]
     desired_trajectory = np.vstack((position, velocity, acceleration, jerk))
-    states = unicycle.getState()
+    states = unicycle.get_state()
+    inputs = unicycle.get_inputs()
     # if i > 0:
     #     states_array = np.vstack((states_array,states))
-    v_c, omega_c = controller.mpc_control_vel_input(states, desired_trajectory)
+    v_c, omega_c = controller.mpc_control_vel_input(inputs, states, desired_trajectory)
     unicycle.update_velocity_motion_model(v_c, omega_c, dt)
-    robot_fig.xy = unicycle.getPoints()
+    robot_fig.xy = unicycle.get_body_points()
     # update time
     # time_text.set_text('time = %.1f' % time_array[i])
     # time_text.set_text('omega_dot_c = %.1f' % omega_dot_c)

@@ -47,9 +47,9 @@ class BicycleModel(VehicleModel):
         self._max_delta = max_delta
         self._max_vel = max_vel
         self._max_vel_dot = max_vel_dot
-        self._front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k')
-        self._back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k')
-        self._body_fig = plt.Polygon(self.get_body_points(),fc = 'g')
+        self._front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k',zorder=5)
+        self._back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k',zorder=5)
+        self._body_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
     
     def set_state(self,states: np.ndarray):
         self._x = states[0,0]
@@ -137,9 +137,9 @@ class BicycleModel(VehicleModel):
         self._body_fig.xy = self.get_body_points()
     
     def plot_vehicle_instance(self, ax: plt.Axes):
-        front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k',zorder=10)
-        back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k',zorder=10)
-        body_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=10)
+        front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k',zorder=5)
+        back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k',zorder=5)
+        body_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
         ax.add_patch(front_wheel_fig)
         ax.add_patch(back_wheel_fig)
         ax.add_patch(body_fig)

@@ -22,7 +22,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
 ax.grid()
-robot_fig = plt.Polygon(unicycle.getPoints(),fc = 'g')
+robot_fig = plt.Polygon(unicycle.get_body_points(),fc = 'g')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 global a_c, theta_dot_c               
@@ -40,10 +40,10 @@ def animate(i):
     # propogate robot motion
     # x_d = 5
     # y_d = 5
-    states = unicycle.getState() 
+    states = unicycle.get_state() 
     t = time_array[i]
     unicycle.update_acceleration_motion_model(a_c[i],theta_dot_c[i],dt)
-    robot_fig.xy = unicycle.getPoints()
+    robot_fig.xy = unicycle.get_body_points()
     
     # update time
     time_text.set_text('time = %.1f' % time_array[i])

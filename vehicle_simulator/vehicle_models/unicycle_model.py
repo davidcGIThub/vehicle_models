@@ -1,10 +1,8 @@
 """
 Unicycle Model Class
 """
-import numpy as np
-
-# velocity motion model
 import numpy as np 
+import matplotlib.pyplot as plt
 
 class UnicycleModel:
 
@@ -24,13 +22,15 @@ class UnicycleModel:
                  max_theta_ddot = 15):
         self._x = x
         self._y = y
-        self._theta = self.wrapAngle(theta)
+        self._theta = self.__wrap_angle(theta)
         self._x_dot = x_dot
         self._y_dot = y_dot
         self._theta_dot = theta_dot
         self._x_ddot = 0
         self._y_ddot = 0
         self._theta_ddot = 0
+        self._vel = x_dot**2 + y_dot**2
+        self._vel_dot = 0
         self._alpha1 = alpha[0]
         self._alpha2 = alpha[1]
         self._alpha3 = alpha[2]
@@ -41,11 +41,12 @@ class UnicycleModel:
         self._max_vel_dot = max_vel_dot
         self._max_theta_dot = max_theta_dot
         self._max_theta_ddot = max_theta_ddot
+        self._robot_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
 
-    def setState(self,states):
+    def set_state(self, states: np.ndarray):
         self._x = states[0,0]
         self._y = states[0,1]
-        self._theta = self.wrapAngle(states[0,2])
+        self._theta = self.__wrap_angle(states[0,2])
         self._x_dot = states[1,0]
         self._y_dot = states[1,1]
         self._theta_dot = states[1,2]
@@ -53,10 +54,12 @@ class UnicycleModel:
         self._y_ddot = states[2,1]
         self._theta_ddot = states[2,2]
 
-    def getState(self):
-        return np.array([[self._x, self._y, self._theta],
-                          [self._x_dot, self._y_dot, self._theta_dot],
-                          [self._x_ddot, self._y_ddot, self._theta_ddot]])
+    def set_inputs(self, inputs: np.ndarray):
+        '''sets the current inputs'''
+        self._vel = inputs[0,0]
+        self._vel_dot = inputs[1,0]
+        self._theta = inputs[0,1]
+        self._theta_dot = inputs[1,1]
 
     def update_velocity_motion_model(self, velocity, angular_rate, dt):
         vel = velocity
@@ -72,7 +75,8 @@ class UnicycleModel:
         self._theta_dot = theta_dot_hat
         self._x = self._x + self._x_dot * dt
         self._y = self._y + self._y_dot * dt
-        self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
+        self._theta = self.__wrap_angle(self._theta + self._theta_dot * dt)
+        self.__update_inputs(vel_hat, vel_dot)
 
     def update_acceleration_motion_model(self, longitudinal_acceleration, angular_rate, dt):
         vel_dot = longitudinal_acceleration
@@ -90,21 +94,55 @@ class UnicycleModel:
         self._theta_dot = theta_dot_hat
         self._x = self._x + self._x_dot * dt
         self._y = self._y + self._y_dot * dt
-        self._theta = self.wrapAngle(self._theta + self._theta_dot * dt)
+        self._theta = self.__wrap_angle(self._theta + self._theta_dot * dt)
+        self.__update_inputs(vel, vel_dot_hat)
 
-    def getPoints(self):
-        R = self.getRotationMatrix(self._theta)
+    def get_vehicle_properties(self):
+        return np.array([self._height, self._width])
+    
+    def get_state(self):
+        return np.array([[self._x, self._y, self._theta],
+                          [self._x_dot, self._y_dot, self._theta_dot],
+                          [self._x_ddot, self._y_ddot, self._theta_ddot]])
+    
+    def get_inputs(self):
+        ''' Returns the current inputs '''
+        return np.array([[self._vel     , self._theta],
+                         [self._vel_dot , self._theta_dot]])
+    
+    def add_patches_to_axes(self, ax: plt.Axes):
+        ax.add_patch(self._robot_fig)
+
+    def add_patches_to_tuple(self, patches: tuple):
+        return patches + (self._robot_fig,)
+
+    def update_patches(self):
+        self._robot_fig.xy = self.get_body_points()
+
+    def plot_vehicle_instance(self, ax: plt.Axes):
+        robot_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
+        ax.add_patch(robot_fig)
+
+    def get_body_points(self):
+        R = self.__get_rotation_matrix(self._theta)
         xy = np.array([[-self._height, self._height, -self._height],
                        [self._width, 0, -self._width]])
         xy = np.dot(R,xy)
         xy = xy + np.array([[self._x],[self._y]])
         return np.transpose(xy)
+    
+    def get_center_of_mass_point(self):
+        return np.array([self._x,self._y])
 
-    def getRotationMatrix(self, theta):
+    def __get_rotation_matrix(self, theta):
         rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)],
                                     [np.sin(theta), np.cos(theta)]])
         return rotation_matrix
 
-    def wrapAngle(self,theta):
+    def __wrap_angle(self,theta):
         return np.arctan2(np.sin(theta), np.cos(theta))
+    
+    def __update_inputs(self, vel: float, vel_dot: float):
+        self._vel = vel
+        self._vel_dot = vel_dot
 

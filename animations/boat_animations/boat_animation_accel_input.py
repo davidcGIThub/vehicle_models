@@ -2,11 +2,11 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from boat_model import BoatModel
+from vehicle_simulator.vehicle_models.boat_model import BoatModel
 import os
 
-x_limits = 30
-y_limits = 30
+x_limits = 20
+y_limits = 20
 sec = 90
 time_array = np.linspace(0,sec,10000)
 dt = time_array[1]
@@ -20,7 +20,7 @@ boat = BoatModel(x = 0,
                  width = 0.5,
                  c_r = 1,
                  max_delta = max_delta,
-                 max_accel = 5,
+                 max_vel_dot = 5,
                  max_vel = 5
                  )
 
@@ -29,8 +29,8 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
 ax.grid()
-boat_fig = plt.Polygon(boat.getBodyPoints(),fc = 'g')
-rudder_fig = plt.Polygon(boat.getRudderPoints(),fc = 'k')
+boat_fig = plt.Polygon(boat.get_body_points(),fc = 'g')
+rudder_fig = plt.Polygon(boat.get_rudder_points(),fc = 'k')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 global v_c, delta_dot_c          
@@ -51,13 +51,13 @@ def animate(i):
     # propogate robot motion
     # x_d = 5
     # y_d = 5
-    states = boat.getState() 
+    states = boat.get_state() 
     # t = time_array[i]
     delta_dot_com = delta_dot_c[i]
     # delta_dot_com = 0
     boat.update_acceleration_motion_model(a_c[i], delta_dot_com,dt)
-    boat_fig.xy = boat.getBodyPoints()
-    rudder_fig.xy = boat.getRudderPoints()
+    boat_fig.xy = boat.get_body_points()
+    rudder_fig.xy = boat.get_rudder_points()
     
     # update time
     time_text.set_text('time = %.1f' % time_array[i])

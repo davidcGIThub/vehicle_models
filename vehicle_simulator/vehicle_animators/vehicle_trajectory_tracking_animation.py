@@ -141,19 +141,19 @@ class VehicleTrajectoryTrackingSimulator:
                             xlim=(x_limits[0],x_limits[1]), ylim=(y_limits[0],y_limits[1]))
         ax.grid()
         center_of_mass = plt.Circle((vehicle_location_data[0,0], vehicle_location_data[1,0]), 
-                                    radius=0.1, fc='none', ec="k")
-        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='tab:blue')
+                                    radius=0.1, fc='none', ec="k", zorder=11)
+        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='tab:blue', zorder=10)
         time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
         ax.plot(path_location_data[0,:],path_location_data[1,:])
         dt = time_data[1] - time_data[0]
         def init():
             #initialize animation
             self._vehicle_model.add_patches_to_axes(ax)
-            ax.add_patch(desired_position_fig)
-            ax.add_patch(center_of_mass)
             time_text.set_text('')
             patches = (desired_position_fig, center_of_mass, time_text)
             all_patches = self._vehicle_model.add_patches_to_tuple(patches)
+            ax.add_patch(desired_position_fig)
+            ax.add_patch(center_of_mass)
             return all_patches
         def animate(i):
             # propogate robot motion
@@ -196,7 +196,7 @@ class VehicleTrajectoryTrackingSimulator:
         ax.plot(vehicle_location_data[0,:],vehicle_location_data[1,:], linestyle="--",
             color = 'tab:red', label="true position")
         center_of_mass = plt.Circle((vehicle_location_data[0,0], vehicle_location_data[1,0]), 
-                                    radius=0.1, fc='none', ec="k")
+                                    radius=0.1, fc='none', ec="k", zorder=10)
         for i in range(num_data_points):
             if i%int(num_data_points/vehicle_instances_per_plot) == 0:
                 self._vehicle_model.set_state(states_list[i])
@@ -204,7 +204,7 @@ class VehicleTrajectoryTrackingSimulator:
                 self._vehicle_model.plot_vehicle_instance(ax)
                 center_of_mass = plt.Circle((vehicle_location_data[0,i], 
                                              vehicle_location_data[1,i]), 
-                                            radius=0.1, fc='none', ec="k")
+                                            radius=0.1, fc='none', ec="k", zorder=10)
                 ax.add_patch(center_of_mass)
         ax.set_xlabel("x position")
         ax.set_ylabel("y position")
@@ -247,17 +247,17 @@ class VehicleTrajectoryTrackingSimulator:
         axs[0].set_ylabel("tracking error")
         axs[1].plot(path_time_data, path_time_data*0 + max_velocity, color='k', label="max vel", linestyle="--")
         axs[1].plot(path_time_data, path_velocity_magnitude_data, color = 'tab:blue', label= "path vel")
-        axs[1].plot(vehicle_time_data, vehicle_velocity_magnitude, color = 'tab:green', label="vehicle vel")   
+        axs[1].plot(vehicle_time_data, vehicle_velocity_magnitude, color = 'tab:red', label="vehicle vel")   
         axs[1].set_ylabel("velocity")
         axs[2].plot(path_time_data, path_time_data*0 + max_acceleration, color='k', label="max accel", linestyle="--")
         axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="path accel")
         # axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="path long accel")
-        axs[2].plot(vehicle_time_data, vehicle_long_accel_mag, color = 'tab:green', label = "vehicle long accel")
+        axs[2].plot(vehicle_time_data, vehicle_long_accel_mag, color = 'tab:red', label = "vehicle long accel")
         axs[2].set_ylabel("acceleration")
         axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_type, linestyle="--")
         if turn_type is not None:
             axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="path " + turn_type)
-        axs[3].plot(vehicle_time_data,vehicle_turn_data,color='tab:green', label="vehicle " + turn_type)
+        axs[3].plot(vehicle_time_data,vehicle_turn_data,color='tab:red', label="vehicle " + turn_type)
         axs[3].set_ylabel(turn_type)
         axs[3].set_xlabel("time (sec)")
         axs[0].legend()
