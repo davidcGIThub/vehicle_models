@@ -29,8 +29,6 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
 ax.grid()
-boat_fig = plt.Polygon(boat.get_body_points(),fc = 'g')
-rudder_fig = plt.Polygon(boat.get_rudder_points(),fc = 'k')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
 global v_c, delta_dot_c          
@@ -41,10 +39,11 @@ delta_dot_c = np.cos(0.2*time_array)*0.3
 
 def init():
     #initialize animation
-    ax.add_patch(boat_fig)
-    ax.add_patch(rudder_fig)
+    boat.add_patches_to_axes(ax)
     time_text.set_text('')
-    return boat_fig, rudder_fig, time_text
+    patches = (time_text,)
+    all_patches = boat.add_patches_to_tuple(patches)
+    return all_patches
 
 def animate(i):
     global boat
@@ -56,13 +55,12 @@ def animate(i):
     delta_dot_com = delta_dot_c[i]
     # delta_dot_com = 0
     boat.update_acceleration_motion_model(a_c[i], delta_dot_com,dt)
-    boat_fig.xy = boat.get_body_points()
-    rudder_fig.xy = boat.get_rudder_points()
-    
+    boat.update_patches()
     # update time
     time_text.set_text('time = %.1f' % time_array[i])
-
-    return boat_fig, rudder_fig, time_text
+    patches = (time_text,)
+    all_patches = boat.add_patches_to_tuple(patches)
+    return all_patches
 
 from time import time
 animate(0)

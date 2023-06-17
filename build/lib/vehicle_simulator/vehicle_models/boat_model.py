@@ -44,6 +44,8 @@ class BoatModel:
         self._delta = delta
         self._delta_dot = delta_dot
         self._delta_ddot = delta_ddot
+        self._vel = np.sqrt(self._x_dot**2 + self._y_dot**2)
+        self._vel_dot = 0
         self._alpha1 = alpha[0]
         self._alpha2 = alpha[1]
         self._alpha3 = alpha[2]
@@ -56,18 +58,16 @@ class BoatModel:
         self._max_delta_dot = max_delta_dot
         self._max_vel = max_vel
         self._max_vel_dot = max_vel_dot
-        self._boat_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
-        self._rudder_fig = plt.Polygon(self.get_rudder_points(),fc = 'k',zorder=5)
+        self._boat_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
+        self._rudder_fig = plt.Polygon(self.get_rudder_points(),fc = 'k',zorder=4)
     
     def set_state(self,states):
         self._x = states[0,0]
         self._y = states[0,1]
         self._theta = self.__wrap_angle(states[0,2])
-        self._delta = states[0,3]
         self._x_dot = states[1,0]
         self._y_dot = states[1,1]
         self._theta_dot = states[1,2]
-        self._delta_dot = states[1,3]
         self._x_ddot = states[2,0]
         self._y_ddot = states[2,1]
         self._theta_ddot = states[2,2]
@@ -98,11 +98,10 @@ class BoatModel:
         self._x_dot = vel*np.cos(self._theta)
         self._y_dot = vel*np.sin(self._theta)
         self._theta_dot = self._c_r * np.sin(-delta) * np.arctan((vel**2))/(self._c_b + vel)
-        self._delta_dot = delta_dot_hat
         self._x = self._x + self._x_dot*dt
         self._y = self._y + self._y_dot*dt
         self._theta = self.__wrap_angle(self._theta + self._theta_dot*dt)
-        self._delta = delta
+        self.__update_inputs(vel, vel_dot_hat, delta, delta_dot_hat)
 
 
     def update_velocity_motion_model(self,velocity, rudder_steering_turn_rate, dt):
@@ -126,16 +125,16 @@ class BoatModel:
         self._x = self._x + self._x_dot*dt
         self._y = self._y + self._y_dot*dt
         self._theta = self.__wrap_angle(self._theta + self._theta_dot*dt)
-        self._delta = delta
+        self.__update_inputs(vel_hat, vel_dot, delta, delta_dot_hat)
 
     def get_vehicle_properties(self):
         return np.array([self._height, self._width, 
                          self._c_r, self._c_b])
 
     def get_state(self):
-        return np.array([[self._x, self._y, self._theta, self._delta],
-                          [self._x_dot, self._y_dot, self._theta_dot, self._delta_dot],
-                          [self._x_ddot, self._y_ddot, self._theta_ddot, 0]])
+        return np.array([[self._x, self._y, self._theta],
+                          [self._x_dot, self._y_dot, self._theta_dot],
+                          [self._x_ddot, self._y_ddot, self._theta_ddot]])
     
     def get_inputs(self):
         ''' Returns the current inputs '''
@@ -155,8 +154,8 @@ class BoatModel:
         self._rudder_fig.xy = self.get_rudder_points()
     
     def plot_vehicle_instance(self, ax: plt.Axes):
-        boat_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
-        rudder_fig = plt.Polygon(self.get_rudder_points(),fc = 'k',zorder=5)
+        boat_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
+        rudder_fig = plt.Polygon(self.get_rudder_points(),fc = 'k',zorder=4)
         ax.add_patch(boat_fig)
         ax.add_patch(rudder_fig)
 
@@ -193,3 +192,9 @@ class BoatModel:
 
     def __wrap_angle(self,theta):
         return np.arctan2(np.sin(theta), np.cos(theta))
+    
+    def __update_inputs(self, vel: float, vel_dot: float, delta: float, delta_dot: float):
+        self._vel = vel
+        self._vel_dot = vel_dot
+        self._delta = delta
+        self._delta_dot = delta_dot

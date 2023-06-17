@@ -2,8 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from boat_model import BoatModel
-from boat_trajectory_tracker import BoatTrajectoryTracker
+from vehicle_simulator.vehicle_models.boat_model import BoatModel
+from vehicle_simulator.vehicle_controllers.boat_trajectory_tracker import BoatTrajectoryTracker
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 from time import sleep
@@ -85,8 +85,8 @@ fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(x_limits), ylim=(y_limits))
 ax.grid()
-boat_fig = plt.Polygon(boat.getBodyPoints(),fc = 'g')
-rudder_fig = plt.Polygon(boat.getRudderPoints(),fc = 'k')
+boat_fig = plt.Polygon(boat.get_body_points(),fc = 'g')
+rudder_fig = plt.Polygon(boat.get_rudder_points(),fc = 'k')
 desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='r')
 
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
@@ -117,7 +117,8 @@ def init():
 def animate(i):
     global boat, controller, path, velocity_data, acceleration_data
     # propogate robot motion
-    states = boat.getState() 
+    states = boat.get_state() 
+    inputs = boat.get_inputs()
     t = time_data[i]
     position = path[:,i]
     velocity = velocity_data[:,i]
@@ -129,11 +130,11 @@ def animate(i):
     acceleration = acceleration_data[:,i]
     jerk = jerk_data[:,i]
     desired_trajectory = np.vstack((position, velocity, acceleration, jerk))
-    vel_c, delta_dot_c = controller.mpc_control_vel_input(states, desired_trajectory)
+    vel_c, delta_dot_c = controller.mpc_control_vel_input(inputs, states, desired_trajectory)
     boat.update_velocity_motion_model(vel_c, delta_dot_c, dt)
     # sleep(0.01)
-    boat_fig.xy = boat.getBodyPoints()
-    rudder_fig.xy = boat.getRudderPoints()
+    boat_fig.xy = boat.get_body_points()
+    rudder_fig.xy = boat.get_rudder_points()
     desired_position_fig.center = (position[0],position[1])
     # update time
     time_text.set_text('time = %.1f' % t)

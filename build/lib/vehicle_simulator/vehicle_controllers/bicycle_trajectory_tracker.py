@@ -79,7 +79,9 @@ class BicycleTrajectoryTracker(TrajectoryTracker):
             vel_dot_com = vel_dot_des
         #### Wheel turn rate computation ####
         # desired delta dot
-        chi_des = np.arctan2(y_ddot_des, x_ddot_des)
+        x_dot_des = x_error*self._k_pos + x_dot_traj
+        y_dot_des = y_error*self._k_pos + y_dot_traj
+        chi_des = np.arctan2(y_dot_des, x_dot_des)
         beta_des = np.clip(self.find_angle_error(theta, chi_des), -np.pi/2, np.pi/2)
         delta_des = np.arctan2(self._L*np.tan(beta_des), self._lr)
         delta_com = np.clip(delta_des, -self._max_delta , self._max_delta) 

@@ -44,10 +44,10 @@ class TrajectoryData:
         dot_product_data = self.__calculate_dot_product_term_data()
         velocity_magnitude_data = self.__calculate_velocity_magnitude_data()
         velocity_magnitude_data[velocity_magnitude_data < 8e-10] = 1
+        self.longitudinal_acceleration_data = dot_product_data/velocity_magnitude_data
         self.centripetal_acceleration_data = cross_term_data/velocity_magnitude_data
         self.angular_rate_data = cross_term_data/velocity_magnitude_data**2
         self.curvature_data = cross_term_data/velocity_magnitude_data**3
-        self.longitudinal_acceleration_data = dot_product_data/velocity_magnitude_data
 
     def __calculate_cross_term_data(self):
         cross_product_norm = np.abs(np.cross(self.velocity_data.T, self.acceleration_data.T).flatten())
@@ -190,9 +190,11 @@ class VehicleTrajectoryTrackingSimulator:
         ax.set_xbound((x_limits[0],x_limits[1]))
         ax.plot(path_location_data[0,:],path_location_data[1,:], color = 'tab:blue', label = "path")
         ax.plot(vehicle_location_data[0,:],vehicle_location_data[1,:], linestyle="--",
-            color = 'tab:red', label="true position")
+            color = 'tab:green', label="true position")
         center_of_mass = plt.Circle((vehicle_location_data[0,0], vehicle_location_data[1,0]), 
-                                    radius=0.1, fc='none', ec="k", zorder=10)
+                                    radius=0.1, fc='tab:green', ec="none", zorder=10)
+        path_point = plt.Circle((path_location_data[0,0], path_location_data[1,0]), 
+                                    radius=0.1, fc='none', ec="tab:blue")
         for i in range(num_data_points):
             if i%int(num_data_points/vehicle_instances_per_plot) == 0:
                 self._vehicle_model.set_state(states_list[i])
@@ -200,8 +202,11 @@ class VehicleTrajectoryTrackingSimulator:
                 self._vehicle_model.plot_vehicle_instance(ax)
                 center_of_mass = plt.Circle((vehicle_location_data[0,i], 
                                              vehicle_location_data[1,i]), 
-                                            radius=0.1, fc='none', ec="k", zorder=11)
+                                            radius=0.1, fc='tab:green', ec="none", zorder=11)
+                path_point = plt.Circle((path_location_data[0,i], path_location_data[1,i]), 
+                                    radius=0.1, fc='none', ec="tab:blue")
                 ax.add_patch(center_of_mass)
+                ax.add_patch(path_point)
         ax.set_xlabel("x position")
         ax.set_ylabel("y position")
         ax.legend()
@@ -218,7 +223,7 @@ class VehicleTrajectoryTrackingSimulator:
         path_longitudinal_acceleration_data = desired_trajectory_data.longitudinal_acceleration_data
         path_time_data = desired_trajectory_data.time_data
         vehicle_location_data = vehicle_trajectory_data.location_data
-        vehicle_velocity_data = vehicle_trajectory_data.location_data
+        vehicle_velocity_data = vehicle_trajectory_data.velocity_data
         vehicle_longitudinal_acceleration_data = vehicle_trajectory_data.longitudinal_acceleration_data
         vehicle_time_data = vehicle_trajectory_data.time_data
         if turn_type == "curvature": 
@@ -243,17 +248,17 @@ class VehicleTrajectoryTrackingSimulator:
         axs[0].set_ylabel("tracking error")
         axs[1].plot(path_time_data, path_time_data*0 + max_velocity, color='k', label="max vel", linestyle="--")
         axs[1].plot(path_time_data, path_velocity_magnitude_data, color = 'tab:blue', label= "path vel")
-        axs[1].plot(vehicle_time_data, vehicle_velocity_magnitude, color = 'tab:red', label="vehicle vel")   
+        axs[1].plot(vehicle_time_data, vehicle_velocity_magnitude, color = 'tab:green', label="vehicle vel")   
         axs[1].set_ylabel("velocity")
         axs[2].plot(path_time_data, path_time_data*0 + max_acceleration, color='k', label="max accel", linestyle="--")
         axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="path accel")
-        # axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="path long accel")
-        axs[2].plot(vehicle_time_data, vehicle_long_accel_mag, color = 'tab:red', label = "vehicle long accel")
+        axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="path long accel")
+        axs[2].plot(vehicle_time_data, vehicle_long_accel_mag, color = 'tab:green', label = "vehicle long accel")
         axs[2].set_ylabel("acceleration")
         axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_type, linestyle="--")
         if turn_type is not None:
             axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="path " + turn_type)
-        axs[3].plot(vehicle_time_data,vehicle_turn_data,color='tab:red', label="vehicle " + turn_type)
+        axs[3].plot(vehicle_time_data,vehicle_turn_data,color='tab:green', label="vehicle " + turn_type)
         axs[3].set_ylabel(turn_type)
         axs[3].set_xlabel("time (sec)")
         axs[0].legend()

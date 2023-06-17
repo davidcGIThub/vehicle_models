@@ -41,7 +41,7 @@ class UnicycleModel:
         self._max_vel_dot = max_vel_dot
         self._max_theta_dot = max_theta_dot
         self._max_theta_ddot = max_theta_ddot
-        self._robot_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
+        self._robot_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
 
     def set_state(self, states: np.ndarray):
         self._x = states[0,0]
@@ -120,7 +120,7 @@ class UnicycleModel:
         self._robot_fig.xy = self.get_body_points()
 
     def plot_vehicle_instance(self, ax: plt.Axes):
-        robot_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
+        robot_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
         ax.add_patch(robot_fig)
 
     def get_body_points(self):

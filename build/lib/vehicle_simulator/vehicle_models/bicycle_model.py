@@ -49,7 +49,7 @@ class BicycleModel(VehicleModel):
         self._max_vel_dot = max_vel_dot
         self._front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k',zorder=5)
         self._back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k',zorder=5)
-        self._body_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
+        self._body_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
     
     def set_state(self,states: np.ndarray):
         self._x = states[0,0]
@@ -99,6 +99,8 @@ class BicycleModel(VehicleModel):
         if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
             delta_dot_hat = 0
         delta = np.clip(self._delta + delta_dot_hat * dt, -self._max_delta, self._max_delta)
+        if delta >= self._max_delta:
+            print("delta: " , delta)
         #following functions should be called in the following order
         beta, beta_dot = self.__get_beta_states(delta, delta_dot_hat)
         self.__update_inputs(vel, vel_dot_hat, delta, delta_dot_hat)
@@ -139,7 +141,7 @@ class BicycleModel(VehicleModel):
     def plot_vehicle_instance(self, ax: plt.Axes):
         front_wheel_fig = plt.Polygon(self.get_front_wheel_points(),fc = 'k',zorder=5)
         back_wheel_fig = plt.Polygon(self.get_back_wheel_points(),fc = 'k',zorder=5)
-        body_fig = plt.Polygon(self.get_body_points(),fc = 'g',zorder=5)
+        body_fig = plt.Polygon(self.get_body_points(),fc = '0.25',zorder=5)
         ax.add_patch(front_wheel_fig)
         ax.add_patch(back_wheel_fig)
         ax.add_patch(body_fig)
