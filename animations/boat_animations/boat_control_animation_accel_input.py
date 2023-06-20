@@ -11,17 +11,17 @@ import os
 import time
 from time import sleep
 
-# control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059,  1.64045914,  5.10907334,
-#    6.44546333,  5.10907334],
-#  [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
-#   -0.45353879,  3.99957881]])
-# scale_factor = 0.3
+control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059,  1.64045914,  5.10907334,
+   6.44546333,  5.10907334],
+ [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
+  -0.45353879,  3.99957881]])
+scale_factor = 1
 
-control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
-   6.63348044,  4.73303911],
- [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
-  -0.22212118,  3.53680028]])
-scale_factor = 1.2370231646042702
+# control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
+#    6.63348044,  4.73303911],
+#  [-3.5377917,   0.2226169,   2.64732412,  1.37367557, -1.37128066, -2.64831555,
+#   -0.22212118,  3.53680028]])
+# scale_factor = 1.2370231646042702
 
 sec = 90
 start_time = 0
@@ -40,11 +40,12 @@ longitudinal_acceleration_data, time_data = bspline_gen.get_longitudinal_acceler
 dt = time_data[1]
 c_r = 50
 c_b = 0.01
-max_vel = 500
-max_vel_dot = 500
-max_delta = np.pi/2.1
-max_delta_dot = 1000
-max_centripetal_acceleration = 4
+max_vel = 10
+max_vel_dot = 20
+max_delta = np.pi/3
+max_delta_dot = 10
+max_centripetal_acceleration = c_r*np.sin(max_delta)*np.pi/2
+print("max cent accel: " , max_centripetal_acceleration)
 
 start_direction = velocity_data[:,0]/np.linalg.norm(velocity_data[:,0],2,0)
 start_point = location_data[:,0]
@@ -100,6 +101,6 @@ bike_traj_sim = VehicleTrajectoryTrackingSimulator(boat, controller)
 des_traj_data = TrajectoryData(location_data, velocity_data, acceleration_data, 
                            jerk_data, time_data)
 # vehicle_traj_data = bike_traj_sim.run_simulation_real_time(des_traj_data, sleep_time=0.1,margins=5)
-vehicle_traj_data = bike_traj_sim.run_simulation(des_traj_data, sleep_time=0)
-bike_traj_sim.plot_simulation_dynamics(des_traj_data, vehicle_traj_data, max_vel, 
-                                       max_vel_dot, max_centripetal_acceleration, "centripetal_acceleration")
+vehicle_traj_data, vehicle_motion_data = bike_traj_sim.run_simulation(des_traj_data, sleep_time=0)
+bike_traj_sim.plot_simulation_dynamics(vehicle_motion_data, des_traj_data, vehicle_traj_data, max_vel, 
+                                       max_vel_dot, max_centripetal_acceleration, "centripetal_acceleration", "boat")

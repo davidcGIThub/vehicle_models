@@ -17,4 +17,6 @@ vehicle_simulator/vehicle_models/boat_model.py
 vehicle_simulator/vehicle_models/unicycle_model.py
 vehicle_simulator/vehicle_models/vehicle_model.py
 vehicle_simulator/vehicle_simulators/__init__.py
+vehicle_simulator/vehicle_simulators/trajectory_data.py
+vehicle_simulator/vehicle_simulators/vehicle_motion_data.py
 vehicle_simulator/vehicle_simulators/vehicle_trajectory_tracking_simulator.py

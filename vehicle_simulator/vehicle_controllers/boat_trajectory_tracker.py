@@ -77,24 +77,17 @@ class BoatTrajectoryTracker:
             vel_dot_com = vel_dot_ffwd + vel_dot_des
         else:
             vel_dot_com = vel_dot_des
-        # vel_dot_com = vel_dot_des
         #### Rudder Turn Rate #####
         # desired rudder turn rate
         x_dot_des = x_error*self._k_pos + x_dot_traj
         y_dot_des = y_error*self._k_pos + y_dot_traj
         theta_des = np.arctan2(y_dot_des,x_dot_des)
-        # print("theta_des: " , theta_des*180/np.pi)
         theta_error = self.find_angle_error(theta, theta_des)
         theta_dot_des = theta_error*self._k_theta
-        # print("theta_dot_des: " , theta_dot_des*180/np.pi)
         delta_des = -np.arcsin(np.clip(theta_dot_des*(vel+self._c_b)/(self._c_r*np.arctan(vel**2)), -1, 1))
-        print("delta_des: " , delta_des)
-        # print("clip: " , np.clip(theta_dot_des*(vel+self._c_b)/(self._c_r*np.arctan(vel**2)), -1, 1))
-        # print("val: " , theta_dot_des*(vel+self._c_b)/(self._c_r*np.arctan(vel**2)))
         delta_com = np.clip(delta_des, -self._max_delta, self._max_delta)
         delta_error = self.find_angle_error(delta, delta_com)
         delta_dot_des = delta_error*self._k_delta
-        print("delta_dot_des: " , delta_dot_des)
         # feedforward rudder turn rate
         vel_traj = np.sqrt(x_dot_traj**2 + y_dot_traj**2)
         vel_dot_traj = np.dot(accel_vec_traj, vel_hat_traj)
@@ -112,11 +105,8 @@ class BoatTrajectoryTracker:
             delta_dot_ffwd = (term_1 - term_2 - theta_ddot_traj)*term_3
         if location_error < self._location_fwd_tol and heading_error < self._heading_ffwd_tol:
             delta_dot_com = delta_dot_ffwd + delta_dot_des
-            print("ffwd")
         else:
             delta_dot_com = delta_dot_des
-        # delta_dot_com = delta_dot_des
-        print("delta_dot_com: " , delta_dot_com)
         return vel_dot_com, delta_dot_com
     
     # def mpc_control_accel_input(self, inputs, states, trajectory_states):

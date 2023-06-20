@@ -7,14 +7,14 @@ import os
 
 x_limits = 5
 y_limits = 5
-sec = 90
+sec = 30
 time_array = np.linspace(0,sec,int(sec/0.1+1))
 dt = time_array[1]
 L = 1
 lr = 0.5
 R = 0.2
 v_max = 5
-delta_max = np.pi/2
+delta_max = np.pi/3
 bike = BicycleModel(x = 0, 
                     y = 0,
                     theta = np.pi/4,
@@ -30,6 +30,9 @@ bike = BicycleModel(x = 0,
                     max_delta = delta_max,
                     max_vel=5)
 
+max_beta = np.arctan2(lr*np.tan(delta_max), L)
+max_curvature = np.tan(delta_max)*np.cos(max_beta)/L
+
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))
@@ -40,10 +43,19 @@ body_fig = plt.Polygon(bike.get_body_points(),fc = 'g')
 
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
-global v_c, phi_c               
+
+
+global v_c, phi_c, delta_dot_c, a_x_array, a_y_array, v_x_array, v_y_array 
 v_c = (1 + 0.5*np.cos(.5*time_array))/3
-# phi_c = np.cos(0.1*time_array)
-phi_c = 2
+delta_c = np.cos(.5*time_array)
+# a_c = (0.5 + 0.5*np.cos(.5*time_array))/3
+a_x_array = 0*time_array
+a_y_array = 0*time_array
+v_x_array = 0*time_array
+v_y_array = 0*time_array
+x_array = 0*time_array
+y_array = 0*time_array
+theta_dot = 0*time_array
 
 def init():
     #initialize animation
@@ -59,8 +71,17 @@ def animate(i):
     # x_d = 5
     # y_d = 5
     states = bike.get_state() 
+    x_array[i] = states[0,0]
+    y_array[i] = states[0,1]
+    a_x_array[i] = states[2,0]
+    a_y_array[i] = states[2,1]
+    v_x_array[i] = states[1,0]
+    v_y_array[i] = states[1,1]
+    theta_dot[i] = states[1,2]
     t = time_array[i]
-    bike.update_velocity_motion_model(v_c[i], phi_c, dt)
+    # bike.update_acceleration_motion_model(a_c[i],delta_dot_c[i],dt)
+    bike.update_velocity_motion_model(v_c[i],delta_c[i],dt)
+    # bike.update_velocity_motion_model(a_c[i],delta_dot_c[i],dt)
     front_wheel_fig.xy = bike.get_front_wheel_points()
     back_wheel_fig.xy = bike.get_back_wheel_points()
     body_fig.xy = bike.get_body_points()
@@ -78,9 +99,49 @@ ani = animation.FuncAnimation(fig, animate, frames = np.size(time_array),
 
 plt.show()
 
-# file_name = os.getcwd() + "/bike_animation.gif"
-# writergif = animation.PillowWriter(fps=30) 
-# ani.save(file_name, writer=writergif)
+velocity_data = np.vstack((v_x_array,v_y_array))
+acceleration_data = np.vstack((a_x_array,a_y_array))
+cross_product_norm = np.abs(np.cross(velocity_data.T, acceleration_data.T).flatten())
+velocity_magnitude_data = np.linalg.norm(velocity_data,2,0)
+velocity_magnitude_data[velocity_magnitude_data < 8e-10] = 1
+curvature_data = cross_product_norm/velocity_magnitude_data**3
+angular_rate = 
 
-file_name = os.getcwd() + "/bike_animation.gif"
-ani.save(file_name, writer='imagemagick', fps=60)
+v_x_array_discrete = (x_array[1:] - x_array[0:-1])/dt
+v_y_array_discrete = (y_array[1:] - y_array[0:-1])/dt
+a_x_array_discrete = (v_x_array[1:] - v_x_array[0:-1])/dt
+a_y_array_discrete = (v_y_array[1:] - v_y_array[0:-1])/dt
+curvature_discrete = theta_dot/velocity_magnitude_data
+
+
+fig1, ((ax1), (ax2), (ax3)) = plt.subplots(3, 1)
+ax1.plot(time_array, curvature_data, label="curvature")
+ax1.plot(time_array, curvature_discrete, label="curvature from theta dot")
+ax1.plot(time_array, time_array*0 + max_curvature)
+ax1.legend()
+ax1.set_ylabel("curavature")
+ax2.plot(time_array, theta_dot)
+ax2.set_ylabel("theta dot")
+# ax2.plot(time_array, v_c)
+# ax2.set_ylabel("velocity")
+# ax3.plot(time_array, delta_c)
+# ax3.set_ylabel("delta")
+plt.show()
+
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+ax1.plot(time_array, v_x_array)
+ax1.plot(time_array[1:], v_x_array_discrete)
+ax1.set_title("X velocity")
+
+ax2.plot(time_array, v_y_array)
+ax2.plot(time_array[1:], v_y_array_discrete)
+ax2.set_title("Y velocity")
+
+ax3.plot(time_array, a_x_array)
+ax3.plot(time_array[1:], a_x_array_discrete)
+ax3.set_title("X acceleration")
+
+ax4.plot(time_array, a_y_array)
+ax4.plot(time_array[1:], a_y_array_discrete)
+ax4.set_title("Y acceleration")
+plt.show()

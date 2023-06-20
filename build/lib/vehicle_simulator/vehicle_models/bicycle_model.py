@@ -82,7 +82,7 @@ class BicycleModel(VehicleModel):
         vel_dot = (vel_hat - self.__calculate_velocity(self._x_dot, self._y_dot))/dt
         self.__update_inputs(vel_hat, vel_dot, delta, delta_dot_hat)
         self.__update_second_derivative_states(self._theta, self._theta_dot, delta, delta_dot_hat, \
-                                               beta, beta_dot, vel, vel_dot)
+                                               beta, beta_dot, vel_hat, vel_dot)
         self.__update_derivative_states(vel_hat, self._theta, delta_dot_hat, beta, dt)
         self.__update_states(self._x_dot,self._y_dot, self._theta_dot,delta, dt)
         return vel_hat, delta_dot_hat
