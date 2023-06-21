@@ -166,7 +166,11 @@ class VehicleTrajectoryTrackingSimulator:
                                     radius=0.1, fc='tab:olive', ec="none", zorder=10)
         path_point = plt.Circle((path_location_data[0,0], path_location_data[1,0]), 
                                     radius=0.1, fc='none', ec="tab:blue", zorder=11)
+        path_length = 0
+        distance = 0
         for i in range(num_data_points):
+            if i != 0: distance = np.linalg.norm(path_location_data[:,i] - path_location_data[:,i-1])
+            path_length += distance
             if i%int(num_data_points/vehicle_instances_per_plot) == 0:
                 self._vehicle_model.set_state(states_list[i])
                 self._vehicle_model.set_inputs(inputs_list[i])
@@ -178,9 +182,14 @@ class VehicleTrajectoryTrackingSimulator:
                                     radius=0.1, fc='none', ec="tab:blue", zorder=11)
                 ax.add_patch(center_of_mass)
                 ax.add_patch(path_point)
+        time_to_traverse = desired_trajectory_data.time_data[-1] - desired_trajectory_data.time_data[0]
         ax.set_xlabel("x position")
         ax.set_ylabel("y position")
-        ax.legend()
+        y_height = y_limits[1] - y_limits[0]
+        y_step = y_height/10 
+        ax.text(x_limits[0]+1,y_limits[1]-y_step,"Path Length: " + str(np.round(path_length,2)))
+        ax.text(x_limits[0]+1,y_limits[1]-2*y_step,"Time to Traverse: " + str(np.round(time_to_traverse,2)))
+        ax.legend(loc="lower right")
         plt.show()
 
     def plot_simulation_dynamics(self, vehicle_motion_data: VehicleMotionData,
@@ -205,17 +214,20 @@ class VehicleTrajectoryTrackingSimulator:
             path_turn_data = desired_trajectory_data.curvature_data
             true_turn_data = true_trajectory_data.curvature_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data/vehicle_velocity_data
-            turn_label = "curv"
+            turn_label = "curvature"
+            turn_legend_label = "curv"
         elif turn_type == "angular_rate": 
             path_turn_data = desired_trajectory_data.angular_rate_data
             true_turn_data = true_trajectory_data.angular_rate_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data
-            turn_label = "ang rate"
+            turn_label = "angular rate"
+            turn_legend_label = "ang rate"
         elif turn_type == "centripetal_acceleration": 
             path_turn_data = desired_trajectory_data.centripetal_acceleration_data
             true_turn_data = true_trajectory_data.centripetal_acceleration_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data*vehicle_velocity_data
-            turn_label = "cent accel"
+            turn_label = "centripetal \n acceleration"
+            turn_legend_label = "centr accel"
         vehicle_turn_data = np.abs(vehicle_turn_data)
         # calculations
         position_error = np.linalg.norm((path_location_data - true_location_data),2,0)
@@ -227,27 +239,28 @@ class VehicleTrajectoryTrackingSimulator:
         fig, axs = plt.subplots(4,1)
         axs[0].plot(path_time_data,position_error, color = 'tab:red', label="pos tracking\n error")
         axs[0].plot(path_time_data,path_time_data*0, color = 'k')
-        axs[0].set_ylabel("tracking error (m)")
+        axs[0].set_ylabel("tracking error \n (m)")
         axs[1].plot(path_time_data, path_time_data*0 + max_velocity, color='k', label="max vel", linestyle="--")
         axs[1].plot(path_time_data, path_velocity_magnitude_data, color = 'tab:blue', label= "des vel")
         axs[1].plot(true_time_data, true_velocity_magnitude, color = 'tab:olive', label= "true vel")   
-        axs[1].set_ylabel("velocity (m/s)")
+        axs[1].set_ylabel("velocity \n (m/s)")
         axs[2].plot(path_time_data, path_time_data*0 + max_acceleration, color='k', label="max accel", linestyle="--")
         axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
         axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="des vel dot")
         axs[2].plot(true_time_data, true_long_accel_mag, color = 'tab:olive', label =  "true vel dot")
-        axs[2].set_ylabel("acceleration (m/s^2)")
-        axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_label, linestyle="--")
-        axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="des " + turn_label)
-        axs[3].plot(true_time_data,true_turn_data,color='tab:olive', label= "true " + turn_label)
+        axs[2].set_ylabel("acceleration \n (m/s^2)")
+        axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_legend_label, linestyle="--")
+        axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="des " + turn_legend_label)
+        axs[3].plot(true_time_data,true_turn_data,color='tab:olive', label= "true " + turn_legend_label)
+        top_turn_plot = np.max(np.concatenate(([max_turn_value],path_turn_data,true_turn_data)))
         if vehicle_type == "bike":
-            axs[3].plot(true_time_data,vehicle_turn_data,color='tab:orange', label= "vehicle " + turn_label)
-        axs[3].set_ylabel(turn_type)
+            axs[3].plot(true_time_data,vehicle_turn_data,color='tab:orange', label= "body " + turn_legend_label)
+        axs[3].set_ylabel(turn_label)
         axs[3].set_xlabel("time (sec)")
-        axs[0].legend()
-        axs[1].legend()
-        axs[2].legend()
-        axs[3].legend()
+        axs[0].legend(loc='upper right')
+        axs[1].legend(loc='upper right')
+        axs[2].legend(loc='upper right')
+        axs[3].legend(loc='upper right')
         plt.show()
 
     def run_simulation_real_time(self, desired_trajectory_data: TrajectoryData, 

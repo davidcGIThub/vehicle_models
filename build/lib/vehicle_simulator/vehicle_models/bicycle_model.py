@@ -99,8 +99,6 @@ class BicycleModel(VehicleModel):
         if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
             delta_dot_hat = 0
         delta = np.clip(self._delta + delta_dot_hat * dt, -self._max_delta, self._max_delta)
-        if delta >= self._max_delta:
-            print("delta: " , delta)
         #following functions should be called in the following order
         beta, beta_dot = self.__get_beta_states(delta, delta_dot_hat)
         self.__update_inputs(vel, vel_dot_hat, delta, delta_dot_hat)
