@@ -107,7 +107,7 @@ class VehicleTrajectoryTrackingSimulator:
         ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                             xlim=(x_limits[0],x_limits[1]), ylim=(y_limits[0],y_limits[1]))
         ax.grid()
-        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='tab:blue', ec="w", zorder=10)
+        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='none', ec="tab:blue", zorder=10)
         center_of_mass = plt.Circle((true_location_data[0,0], true_location_data[1,0]), 
                                     radius=0.1, fc='tab:olive', ec="none", zorder=10)
         time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
@@ -205,14 +205,18 @@ class VehicleTrajectoryTrackingSimulator:
             path_turn_data = desired_trajectory_data.curvature_data
             true_turn_data = true_trajectory_data.curvature_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data/vehicle_velocity_data
+            turn_label = "curv"
         elif turn_type == "angular_rate": 
             path_turn_data = desired_trajectory_data.angular_rate_data
             true_turn_data = true_trajectory_data.angular_rate_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data
+            turn_label = "ang rate"
         elif turn_type == "centripetal_acceleration": 
             path_turn_data = desired_trajectory_data.centripetal_acceleration_data
             true_turn_data = true_trajectory_data.centripetal_acceleration_data
             vehicle_turn_data = vehicle_motion_data.heading_angular_rate_data*vehicle_velocity_data
+            turn_label = "cent accel"
+        vehicle_turn_data = np.abs(vehicle_turn_data)
         # calculations
         position_error = np.linalg.norm((path_location_data - true_location_data),2,0)
         path_velocity_magnitude_data = np.linalg.norm(path_velocity_data,2,0)
@@ -233,12 +237,11 @@ class VehicleTrajectoryTrackingSimulator:
         axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="des vel dot")
         axs[2].plot(true_time_data, true_long_accel_mag, color = 'tab:olive', label =  "true vel dot")
         axs[2].set_ylabel("acceleration (m/s^2)")
-        axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_type, linestyle="--")
-        axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="des " + turn_type)
-        axs[3].plot(true_time_data,true_turn_data,color='tab:olive', label= "true " + turn_type)
+        axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max " + turn_label, linestyle="--")
+        axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="des " + turn_label)
+        axs[3].plot(true_time_data,true_turn_data,color='tab:olive', label= "true " + turn_label)
         if vehicle_type == "bike":
-            axs[3].plot(true_time_data,vehicle_turn_data,color='tab:orange', label= "vehicle " + turn_type)
-
+            axs[3].plot(true_time_data,vehicle_turn_data,color='tab:orange', label= "vehicle " + turn_label)
         axs[3].set_ylabel(turn_type)
         axs[3].set_xlabel("time (sec)")
         axs[0].legend()
@@ -266,7 +269,7 @@ class VehicleTrajectoryTrackingSimulator:
         ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                             xlim=(x_limits[0],x_limits[1]), ylim=(y_limits[0],y_limits[1]))
         ax.grid()
-        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='tab:blue', ec="w", zorder=10)
+        desired_position_fig = plt.Circle((0, 0), radius=0.1, fc='none', ec="tab:blue", zorder=10)
         vehicle_states = self._vehicle_model.get_state()
         center_of_mass = plt.Circle((vehicle_states[0,0], vehicle_states[0,1]), 
                                     radius=0.1, fc='tab:olive', ec="none", zorder=10)
