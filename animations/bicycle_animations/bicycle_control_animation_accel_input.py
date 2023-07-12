@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.bicycle_model import BicycleModel
 from vehicle_simulator.vehicle_controllers.bicycle_trajectory_tracker import BicycleTrajectoryTracker
-from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator import VehicleTrajectoryTrackingSimulator, TrajectoryData
+from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator_2D import VehicleTrajectoryTrackingSimulator, TrajectoryData
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -23,6 +23,12 @@ control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457, 
   -0.22212118,  3.53680028]])
 # scale_factor = 1.2370231646042702
 scale_factor = 1
+
+control_points = np.array([[ -8.81734411, -10.59132794,  -8.81734411,  -3.47850606,   3.33607687,
+    8.75567965,  10.62216017,   8.75567965],
+ [-12.62006893,   1.45554192,   6.79790124,   3.41406858,  -3.48265862,
+   -6.82372064,  -1.44263223,  12.59424954]])
+scale_factor = 0.9708985088404926
 
 sec = 90
 start_time = 0
@@ -47,8 +53,9 @@ dt = time_data[1]
 L = 1
 l_r = 0.5
 R = 0.2
-max_vel = 10
-max_delta = np.pi/4
+max_vel = 20
+max_wheel_turn_angle = 60
+max_delta = max_wheel_turn_angle * np.pi/180
 max_beta = np.arctan2(l_r*np.tan(max_delta), L)
 print("max_beta: " , max_beta)
 max_curvature = np.tan(max_delta)*np.cos(max_beta)/L
@@ -57,8 +64,8 @@ max_vel_dot = 10
 
 bike = BicycleModel(x = start_point[0], 
                     y = start_point[1],
-                    # theta = start_heading,
-                    theta = 0,
+                    theta = start_heading,
+                    # theta = 0,
                     delta = 0,
                     x_dot = start_vel[0], 
                     y_dot = start_vel[1], 
@@ -72,8 +79,8 @@ bike = BicycleModel(x = start_point[0],
                     max_delta = max_delta,
                     max_vel = max_vel,
                     max_vel_dot = max_vel_dot)
-controller = BicycleTrajectoryTracker(k_pos = 5, 
-                                        k_vel = 5,
+controller = BicycleTrajectoryTracker(k_pos = 1.5, 
+                                        k_vel = 6,
                                         k_delta = 5,
                                         max_vel_dot = max_vel_dot,
                                         max_vel = max_vel,
@@ -83,6 +90,6 @@ controller = BicycleTrajectoryTracker(k_pos = 5,
 bike_traj_sim = VehicleTrajectoryTrackingSimulator(bike, controller)
 des_traj_data = TrajectoryData(location_data, velocity_data, acceleration_data, 
                            jerk_data, time_data)
-vehicle_traj_data, vehicle_motion_data = bike_traj_sim.run_simulation(des_traj_data)
+vehicle_traj_data, vehicle_motion_data = bike_traj_sim.run_simulation(des_traj_data,sleep_time=0.1)
 bike_traj_sim.plot_simulation_dynamics(vehicle_motion_data, des_traj_data, vehicle_traj_data, max_vel,
                                        max_vel_dot, max_curvature, "curvature", "bike")

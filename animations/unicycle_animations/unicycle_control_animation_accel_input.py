@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.unicycle_model import UnicycleModel
 from vehicle_simulator.vehicle_controllers.unicycle_trajectory_tracker import UnicycleTrajectoryTracker
-from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator import VehicleTrajectoryTrackingSimulator, TrajectoryData
+from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator_2D import VehicleTrajectoryTrackingSimulator, TrajectoryData
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -15,7 +15,7 @@ control_points = np.array([[-5.1092889,  -6.44535555, -5.1092889,  -1.64036059, 
    6.44546333,  5.10907334],
  [-3.9985993,   0.45304904,  2.18640314,  0.8680498,  -0.86623853, -2.18542364,
   -0.45353879,  3.99957881]])
-scale_factor = 0.5
+scale_factor = 0.3
 
 # control_points = np.array([[-4.73449447, -6.63275277, -4.73449447, -1.24883457,  1.24861455,  4.73303911,
 #    6.63348044,  4.73303911],

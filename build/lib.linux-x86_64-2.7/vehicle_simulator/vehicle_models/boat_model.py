@@ -81,8 +81,8 @@ class BoatModel:
 
     def update_acceleration_motion_model(self,longitudinal_acceleration, rudder_steering_turn_rate,dt):
         vel_dot = longitudinal_acceleration #acceleration
-        # if abs(vel_dot) > abs(self._max_vel_dot):
-        #     print("Exceeded vel dot: " , vel_dot)
+        if vel_dot > self._max_vel_dot:
+            print("Exceeded vel dot: " , vel_dot)
         delta_dot = rudder_steering_turn_rate #rudder location
         vel_dot_hat = np.clip(vel_dot + (self._alpha1 * vel_dot**2 + self._alpha4 * delta_dot**2) * np.random.randn(), -self._max_vel_dot, self._max_vel_dot)
         vel = np.clip( np.sqrt(self._x_dot**2 + self._y_dot**2) + vel_dot_hat*dt , 0 , self._max_vel )
@@ -92,10 +92,10 @@ class BoatModel:
         if (delta_dot_hat > 0 and self._delta >= self._max_delta) or (delta_dot_hat < 0 and self._delta <= -self._max_delta):
             delta_dot_hat = 0
         delta = np.clip(self._delta + delta_dot_hat*dt, -self._max_delta, self._max_delta)
-        self._x_ddot = vel_dot_hat*np.cos(self._theta) - vel*np.sin(self._theta)*self._theta_dot
-        self._y_ddot = vel_dot_hat*np.sin(self._theta) + vel*np.cos(self._theta)*self._theta_dot
+        self._x_ddot = vel_dot*np.cos(self._theta) - vel*np.sin(self._theta)*self._theta_dot
+        self._y_ddot = vel_dot*np.sin(self._theta) + vel*np.cos(self._theta)*self._theta_dot
         self._theta_ddot = self._c_r*vel_dot_hat*np.sin(delta)*np.arctan(vel**2)/(self._c_b+vel)**2 \
-            - 2*self._c_r*vel*vel_dot_hat*np.sin(delta)/((vel**4 + 1)*(self._c_b + vel)) \
+            - 2*self._c_r*vel*vel_dot*np.sin(delta)/((vel**4 + 1)*(self._c_b + vel)) \
             - self._c_r*delta_dot_hat*np.cos(delta)*np.arctan(vel**2)/(self._c_b+vel)
         self._x_dot = vel*np.cos(self._theta)
         self._y_dot = vel*np.sin(self._theta)

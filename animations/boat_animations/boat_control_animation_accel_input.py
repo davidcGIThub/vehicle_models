@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle
 from vehicle_simulator.vehicle_models.boat_model import BoatModel
 from vehicle_simulator.vehicle_controllers.boat_trajectory_tracker import BoatTrajectoryTracker
-from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator import VehicleTrajectoryTrackingSimulator, TrajectoryData
+from vehicle_simulator.vehicle_simulators.vehicle_trajectory_tracking_simulator_2D import VehicleTrajectoryTrackingSimulator, TrajectoryData
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 import time
@@ -73,8 +73,8 @@ boat = BoatModel(x = start_point[0],
                  y_dot = start_vel[1],
                  x_ddot = start_accel[0],
                  y_ddot = start_accel[1],
-                 alpha = np.array([0,0,0,0]),
-                #  alpha = np.array([0.1,0.01,0.01,0.1]),
+                #  alpha = np.array([0,0,0,0]),
+                 alpha = np.array([0.1,0.01,0.01,0.1]),
                  height = 0.8,
                  width = 0.4,
                  c_r = c_r, #rudder constant
