@@ -17,29 +17,25 @@ class BsplineEvaluator:
 
     def __get_closest_control_point_set(self, control_points, position):
         num_control_points = self.__count_number_of_control_points(control_points)
-        number_of_knot_points = num_control_points + self._order + 1
-        knot_points = np.arange(number_of_knot_points) - self._order
-        dataset = self.__matrix_bspline_evaluation_for_dataset(control_points, \
-                knot_points, self._initial_num_points_to_check_per_interval)
-        distances = np.linalg.norm(position - dataset,2,0)
-        end_knot_point = knot_points[num_control_points]
-        intial_knot_point = int(np.argmin(distances)/len(distances)*end_knot_point)
-        control_point_set = control_points[:,intial_knot_point:intial_knot_point+self._order+1]
+        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, \
+                self._order, self._initial_num_points_to_check_per_interval)
+        distances = np.linalg.norm(position.flatten()[:,None] - dataset,2,0)
+        num_intervals = num_control_points - self._order
+        intial_ctrl_pt_index = int(np.argmin(distances)/len(distances)*num_intervals)
+        control_point_set = control_points[:,intial_ctrl_pt_index:intial_ctrl_pt_index+self._order+1]
         return control_point_set
+
     
     def __get_closest_point_and_t(self, control_points, scale_factor, position):
-        num_control_points = self._order + 1
-        number_of_knot_points = num_control_points + self._order + 1
-        knot_points = np.arange(number_of_knot_points) - self._order
-        dataset = self.__matrix_bspline_evaluation_for_dataset(control_points, \
-                    knot_points, self._num_points_to_check_per_interval)
-        distances = np.linalg.norm(position - dataset,2,0)
+        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, \
+                    self._order, self._num_points_to_check_per_interval)
+        distances = np.linalg.norm(position.flatten()[:,None] - dataset,2,0)
         closest_point_index = np.argmin(distances)
         closest_point = dataset[:,closest_point_index][:,None]
         t = closest_point_index/len(distances)
         return closest_point, t*scale_factor
     
-    def __matrix_bspline_evaluation_for_dataset(self, control_points, knot_points, num_points_per_interval):
+    def matrix_bspline_evaluation_for_dataset(self, control_points, order, num_points_per_interval):
         """
         This function evaluates the B spline for a given time data-set
         """
@@ -47,7 +43,6 @@ class BsplineEvaluator:
         num_ppi = num_points_per_interval
         dimension = self.__get_dimension(control_points)
         number_of_control_points = self.__count_number_of_control_points(control_points)
-        order = len(knot_points) - number_of_control_points - 1
         num_intervals = number_of_control_points - order
         #create steps matrix
         steps_array = np.linspace(0,1,num_ppi+1)

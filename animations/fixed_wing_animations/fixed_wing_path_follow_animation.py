@@ -10,6 +10,7 @@ from vehicle_simulator.vehicle_models.fixed_wing_model import FixedWingModel
 from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingParameters
 from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWingControlParameters, FixedWingAutopilot
 from vehicle_simulator.vehicle_controllers.fixed_wing_path_follower import FixedWingSplinePathFollower
+from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 from time import sleep
 
 
@@ -19,7 +20,9 @@ control_points = np.array([[-18.26855358,   0.70966115,  15.429909,    22.011218
  [  5.12944029,  -2.56472015,   5.12944029,  33.72586905,  68.41308514,
    94.37956304, 102.81021848,  94.37956304],
  [100.25649204,  99.87175398, 100.25649204, 101.68637201, 103.4207176,
-  104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[1]])
+  104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[-1]])
+bspline_eval = BsplineEvaluator(order)
+position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, 1000)
 
 
 fixed_wing_parameters = FixedWingParameters()
@@ -30,7 +33,7 @@ ax = plt.axes(projection='3d')
 fig.add_axes(ax)
 north = 0
 east = 0
-down = -10
+down = -100
 u = 25
 v = 0
 w = 0
@@ -49,7 +52,7 @@ plane_model = FixedWingModel(ax, fixed_wing_parameters,
                   wingspan = wingspan, fuselage_length = fuselage_length,
                     state = state0)
 autopilot = FixedWingAutopilot(control_parameters)
-path_follower = FixedWingSplinePathFollower(order)
+path_follower = FixedWingSplinePathFollower(order, distance_gain=5)
 
 # define forces
 def update_line(num, plane_model: FixedWingModel, autopilot: FixedWingAutopilot,
@@ -75,6 +78,7 @@ ax.set_ylabel('Y')
 ax.set_zlabel('Z')
 ax.set_title('Plane Model Test')
 ax.view_init(elev=190, azim=45)
+ax.plot(position_array[0,:], position_array[1,:], position_array[2,:], color="tab:blue")
 
 # Creating the Animation object
 delayBetweenFrames_ms = 50

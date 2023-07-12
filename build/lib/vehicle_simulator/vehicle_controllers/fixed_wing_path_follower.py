@@ -3,7 +3,7 @@ from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvalu
 
 class FixedWingSplinePathFollower:
 
-    def __init__(self, order, path_gain = 1, distance_gain = 1, feedforward_gain = 2, feedforward_distance = 5):
+    def __init__(self, order, distance_gain = 1, path_gain = 1, feedforward_gain = 2, feedforward_distance = 5):
         self._order = order
         self._path_gain = path_gain
         self._distance_gain = distance_gain
@@ -15,10 +15,13 @@ class FixedWingSplinePathFollower:
         scale_factor = 1
         closest_point, closest_velocity_vector, closest_acceleration_vector = \
             self._spline_evaluator.get_closest_point_and_derivatives(control_points, scale_factor, position) 
+        print("       _point: " , position.flatten())
+        print("closest_point: " , closest_point.flatten())
         direction_desired = self.get_desired_direction_vector(closest_point, position,
             closest_velocity_vector, closest_acceleration_vector, desired_airspeed)
+        print("direction_des: " , direction_desired.flatten())
         course_angle_command = np.arctan2(direction_desired.item(1), direction_desired.item(0))
-        climb_rate_command = desired_airspeed * direction_desired.item(2)
+        climb_rate_command = desired_airspeed * (-direction_desired.item(2))
         airspeed_command = desired_airspeed
         phi_feedforward = 0
         return np.array([course_angle_command, climb_rate_command, airspeed_command, phi_feedforward])
@@ -27,14 +30,14 @@ class FixedWingSplinePathFollower:
                                      closest_acceleration_vector, desired_airspeed):
         path_vector = closest_velocity_vector/np.linalg.norm(closest_velocity_vector)
         path_change_vector = closest_acceleration_vector/np.linalg.norm(closest_acceleration_vector)
-        distance_vector = closest_point - position
+        distance_vector = closest_point.flatten() - position.flatten()
         distance = np.linalg.norm(distance_vector,2)
         if distance < self._feedforward_distance:
             desired_direction_vector = distance_vector*self._distance_gain + \
-                path_vector*desired_airspeed*self._path_gain + path_change_vector * self._feedforward_gain
+                path_vector.flatten()*desired_airspeed*self._path_gain + path_change_vector.flatten() * self._feedforward_gain
         else:
             desired_direction_vector = distance_vector*self._distance_gain + \
-                path_vector*desired_airspeed*self._path_gain
+                path_vector.flatten()*desired_airspeed*self._path_gain
         desired_direction_vector = desired_direction_vector/ np.linalg.norm(desired_direction_vector)
         return desired_direction_vector
 
