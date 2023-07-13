@@ -1,8 +1,8 @@
 import numpy as np
 from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingParameters
+from vehicle_simulator.vehicle_models.vehicle_model_3D import VehicleModel3D
 
-
-class FixedWingModel:
+class FixedWingModel(VehicleModel3D):
     def __init__(self, ax, vehicle_parameters: FixedWingParameters = FixedWingParameters(),
                   wingspan = 0.2, fuselage_length = 0.35,
                     state = np.array([0,0,-50,25,0,0,1,0,0,0,0,0,0])):
@@ -24,19 +24,20 @@ class FixedWingModel:
         #Graphics
         self._fuselage_length = fuselage_length
         self._wingspan = wingspan
-        fuselage_color = 'k'
-        wings_color = '0.5'
+        self._fuselage_color = 'k'
+        self._wings_color = '0.5'
         self.translation = np.array([[self._north],[self._east],[self._down]])
         quaternion = np.array([self._e0, self._e1, self._e2, self._e3])
         self.rotation = self._Quaternion2Rotation(quaternion)
-        self.fuselage, = ax.plot([], [], [], lw=2, color=fuselage_color)
-        self.wings, = ax.plot([], [], [], lw=2, color=wings_color)
-        self.tail, = ax.plot([], [], [], lw=2, color=wings_color)
-        self.rudder, = ax.plot([], [], [], lw=2, color=fuselage_color)
+        self.ax = ax
+        self.fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+        self.wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        self.tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        self.rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
         
     def update(self, delta, wind, dt):
         self._update_dynamics(delta, wind, dt)
-        self._update_graphics()
+        self.update_graphics()
 
     def get_state(self):
         state = np.array([self._north, self._east, self._down,
@@ -59,6 +60,9 @@ class FixedWingModel:
         self._p = state.item(10)  # initial roll rate
         self._q = state.item(11)  # initial pitch rate
         self._r = state.item(12) 
+
+    def get_ax(self):
+        return self.ax
     
     def _update_dynamics(self, delta, wind, dt):
         '''
@@ -308,27 +312,37 @@ class FixedWingModel:
         return R
 
     #### Graphic Functions ####
-    def _update_graphics(self):
+    def plot_plane(self, ax):
+        fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+        wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+        self._draw_fuselage(fuselage)
+        self._draw_wings(wings)
+        self._draw_tail(tail)
+        self._draw_rudder(rudder)
+
+    def update_graphics(self):
         self.translation = np.array([[self._north],[self._east],[self._down]])
         quaternion = np.array([self._e0, self._e1, self._e2, self._e3])
         self.rotation = self._Quaternion2Rotation(quaternion)
         self._draw()
 
     def _draw(self):
-        self._draw_fuselage()
-        self._draw_wings()
-        self._draw_tail()
-        self._draw_rudder()
+        self._draw_fuselage(self.fuselage)
+        self._draw_wings(self.wings)
+        self._draw_tail(self.tail)
+        self._draw_rudder(self.rudder)
 
-    def _draw_fuselage(self):
+    def _draw_fuselage(self, fuselage):
         back_point = np.array([[-self._fuselage_length/2],[0],[0]])
         front_point = np.array([[self._fuselage_length/2],[0],[0]])
         back_point = np.dot(self.rotation, back_point) + self.translation
         front_point = np.dot(self.rotation, front_point) + self.translation
-        self.fuselage.set_data(np.array([back_point.item(0),front_point.item(0)]) , np.array([back_point.item(1),front_point.item(1)]))
-        self.fuselage.set_3d_properties(np.array([back_point.item(2),front_point.item(2)]))
+        fuselage.set_data(np.array([back_point.item(0),front_point.item(0)]) , np.array([back_point.item(1),front_point.item(1)]))
+        fuselage.set_3d_properties(np.array([back_point.item(2),front_point.item(2)]))
 
-    def _draw_wings(self):
+    def _draw_wings(self, wings):
         chord = self._fuselage_length/4
         left_back = np.array([[0],[-self._wingspan/2],[0]])
         left_front = np.array([[chord],[-self._wingspan/2],[0]])
@@ -338,11 +352,11 @@ class FixedWingModel:
         left_front = np.dot(self.rotation, left_front) + self.translation
         right_front = np.dot(self.rotation, right_front) + self.translation
         right_back = np.dot(self.rotation, right_back) + self.translation
-        self.wings.set_data(np.array([left_back.item(0),left_front.item(0),right_front.item(0),right_back.item(0),left_back.item(0)]),
+        wings.set_data(np.array([left_back.item(0),left_front.item(0),right_front.item(0),right_back.item(0),left_back.item(0)]),
                             np.array([left_back.item(1),left_front.item(1),right_front.item(1),right_back.item(1),left_back.item(1)]))
-        self.wings.set_3d_properties(np.array([left_back.item(2),left_front.item(2),right_front.item(2),right_back.item(2),left_back.item(2)]))
+        wings.set_3d_properties(np.array([left_back.item(2),left_front.item(2),right_front.item(2),right_back.item(2),left_back.item(2)]))
 
-    def _draw_tail(self):
+    def _draw_tail(self, tail):
         tail_span = self._wingspan/2
         tail_chord = self._fuselage_length/5
         left_back = np.array([[-self._fuselage_length/2],[-tail_span/2],[0]])
@@ -353,11 +367,11 @@ class FixedWingModel:
         left_front = np.dot(self.rotation, left_front) + self.translation
         right_front = np.dot(self.rotation, right_front) + self.translation
         right_back = np.dot(self.rotation, right_back) + self.translation
-        self.tail.set_data(np.array([left_back.item(0),left_front.item(0),right_front.item(0),right_back.item(0),left_back.item(0)]),
+        tail.set_data(np.array([left_back.item(0),left_front.item(0),right_front.item(0),right_back.item(0),left_back.item(0)]),
                             np.array([left_back.item(1),left_front.item(1),right_front.item(1),right_back.item(1),left_back.item(1)]))
-        self.tail.set_3d_properties(np.array([left_back.item(2),left_front.item(2),right_front.item(2),right_back.item(2),left_back.item(2)]))
+        tail.set_3d_properties(np.array([left_back.item(2),left_front.item(2),right_front.item(2),right_back.item(2),left_back.item(2)]))
 
-    def _draw_rudder(self):
+    def _draw_rudder(self, rudder):
         rudder_chord = self._fuselage_length/5
         rudder_height = self._fuselage_length/5
         bottom_back = np.array([[-self._fuselage_length/2],[0],[0]])
@@ -366,7 +380,7 @@ class FixedWingModel:
         bottom_back = np.dot(self.rotation, bottom_back) + self.translation
         bottom_front = np.dot(self.rotation, bottom_front) + self.translation
         top = np.dot(self.rotation, top) + self.translation
-        self.rudder.set_data(np.array([bottom_back.item(0),bottom_front.item(0),top.item(0),bottom_back.item(0)]),
+        rudder.set_data(np.array([bottom_back.item(0),bottom_front.item(0),top.item(0),bottom_back.item(0)]),
                            np.array([bottom_back.item(1),bottom_front.item(1),top.item(1),bottom_back.item(1)]))
-        self.rudder.set_3d_properties(np.array([bottom_back.item(2),bottom_front.item(2),top.item(2),bottom_back.item(2)]))
+        rudder.set_3d_properties(np.array([bottom_back.item(2),bottom_front.item(2),top.item(2),bottom_back.item(2)]))
 

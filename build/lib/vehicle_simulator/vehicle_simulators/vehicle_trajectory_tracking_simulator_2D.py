@@ -4,7 +4,7 @@ Bicycle Trajectory Animation class
 import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from vehicle_simulator.vehicle_models.vehicle_model import VehicleModel
+from vehicle_simulator.vehicle_models.vehicle_model_2D import VehicleModel
 from vehicle_simulator.vehicle_controllers.trajectory_tracker import TrajectoryTracker
 from vehicle_simulator.vehicle_simulators.trajectory_data import TrajectoryData
 from vehicle_simulator.vehicle_simulators.vehicle_motion_data_2D import VehicleMotionData

@@ -7,7 +7,6 @@ from vehicle_simulator.vehicle_controllers.unicycle_trajectory_tracker import Un
 from bsplinegenerator.bsplines import BsplineEvaluation
 import os
 
-
 # Trajectory
 control_points = np.array([[-0.78239366,  0.53552146,  1.95280528,  3.24396037,  3.98445455,  4.32363038, 5.09089489,  6.46946519,  7.98779535,  9.2222135 ],
  [ 0.94721576,  1.17503746,  0.94370588,  1.56019985,  2.83357583,  5.06946717, 6.48835075,  7.13807965,  6.93096018,  7.13807965]])+ 1

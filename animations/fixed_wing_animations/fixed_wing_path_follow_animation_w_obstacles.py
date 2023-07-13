@@ -20,10 +20,21 @@ control_points = np.array([[-18.26855358,   0.70966115,  15.429909,    22.011218
  [  5.12944029,  -2.56472015,   5.12944029,  33.72586905,  68.41308514,
    94.37956304, 102.81021848,  94.37956304],
  [100.25649204,  99.87175398, 100.25649204, 101.68637201, 103.4207176,
-  104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[-1]])
+  104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[0]])
 bspline_eval = BsplineEvaluator(order)
 position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, 1000)
+waypoints = position_array[:,np.array([0,500,1000])]
+sfc_points = np.array([[ 8,  -2,  -2,   8,   8,  -2,  -2,   8,   8,   8,   8,   8,  -2,  -2, -2,  -2],
+ [-1,  -1,   1,   1,   1,   1,  -1,  -1,  -1,   1,   1,  -1,  -1,  -1, 1,   1. ],
+ [-1.5, -1.5, -1.5, -1.5,  1.5,  1.5,  1.5,  1.5, -1.5, -1.5,  1.5,  1.5,  1.5, -1.5, -1.5,  1.5]])*10
 
+obstacle_x_data = np.array([[15, 15.34202014, 15.64278761, 15.8660254,  15.98480775, 15.98480775, 15.8660254,  15.64278761, 15.34202014, 15],
+                            [15,15.32348855, 15.6079596,  15.81910176, 15.93144815, 15.93144815, 15.81910176, 15.6079596,  15.32348855, 15]])*10 - 150
+obstacle_y_data = np.array([[-10, -10, -10, -10, -10, -10, -10, -10, -10, -10 ],
+                            [-10, -9.88894624, -9.7912872, -9.71880201, -9.68023345,  -9.68023345,  -9.71880201,  -9.7912872,   -9.88894624, -10]])*10 + 100
+obstacle_z_data = np.array([[7, 6.93969262, 6.76604444, 6.5, 6.17364818, 5.82635182, 5.5, 5.23395556, 5.06030738, 5],
+                             [7,6.93969262, 6.76604444, 6.5, 6.17364818, 5.82635182, 5.5, 5.23395556, 5.06030738, 5]])*10 - 60
+ 
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
@@ -32,7 +43,7 @@ ax = plt.axes(projection='3d')
 fig.add_axes(ax)
 north = 0
 east = 0
-down = -100
+down = 0
 u = 25
 v = 0
 w = 0
@@ -78,7 +89,9 @@ ax.set_zlabel('Z')
 ax.set_title('Plane Model Test')
 ax.view_init(elev=190, azim=45)
 ax.plot(position_array[0,:], position_array[1,:], position_array[2,:], color="tab:blue")
-
+ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)
+ax.plot_surface(obstacle_x_data, obstacle_y_data, obstacle_z_data, color="r")
+ax.scatter(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o")
 # Creating the Animation object
 delayBetweenFrames_ms = 50
 dt = delayBetweenFrames_ms / 1000 #seconds between frames

@@ -177,12 +177,12 @@ class BoatTrajectoryTracker:
     #         delta_dot_com = delta_dot_des
     #     return vel_dot_com, delta_dot_com
 
-    def mpc_control_vel_input(self, states, trajectory_states):
+    def mpc_control_vel_input(self, inputs, states, trajectory_states):
         # Get current states
         x = states[0,0]
         y = states[0,1]
         theta = states[0,2]
-        delta = states[0,3]
+        delta = inputs[0,1]
         x_dot = states[1,0]
         y_dot = states[1,1]
         # Get Desired Trajectory States

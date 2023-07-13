@@ -4,7 +4,7 @@ Bicycle Model Class
 from matplotlib.text import get_rotation
 import numpy as np
 import matplotlib.pyplot as plt
-from vehicle_simulator.vehicle_models.vehicle_model import VehicleModel
+from vehicle_simulator.vehicle_models.vehicle_model_2D import VehicleModel
 
 class BicycleModel(VehicleModel):
 

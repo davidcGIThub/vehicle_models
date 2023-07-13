@@ -101,7 +101,6 @@ controller = BoatTrajectoryTracker(c_r = c_r,
                                     max_vel = max_vel,
                                     max_vel_dot = max_vel_dot,
                                     max_delta = max_delta,
-                                    max_delta_dot = max_delta_dot,
                                     turn_vel = 0.5,
                                     location_fwd_tol = 2,
                                     heading_ffwd_tol = 0.3)

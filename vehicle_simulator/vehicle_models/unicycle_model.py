@@ -3,8 +3,9 @@ Unicycle Model Class
 """
 import numpy as np 
 import matplotlib.pyplot as plt
+from vehicle_simulator.vehicle_models.vehicle_model_2D import VehicleModel
 
-class UnicycleModel:
+class UnicycleModel(VehicleModel):
 
     def __init__(self, 
                  x = 0, 

@@ -15,11 +15,8 @@ class FixedWingSplinePathFollower:
         scale_factor = 1
         closest_point, closest_velocity_vector, closest_acceleration_vector = \
             self._spline_evaluator.get_closest_point_and_derivatives(control_points, scale_factor, position) 
-        print("       _point: " , position.flatten())
-        print("closest_point: " , closest_point.flatten())
         direction_desired = self.get_desired_direction_vector(closest_point, position,
             closest_velocity_vector, closest_acceleration_vector, desired_airspeed)
-        print("direction_des: " , direction_desired.flatten())
         course_angle_command = np.arctan2(direction_desired.item(1), direction_desired.item(0))
         climb_rate_command = desired_airspeed * (-direction_desired.item(2))
         airspeed_command = desired_airspeed

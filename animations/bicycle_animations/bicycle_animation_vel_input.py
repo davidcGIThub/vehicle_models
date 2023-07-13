@@ -105,7 +105,7 @@ cross_product_norm = np.abs(np.cross(velocity_data.T, acceleration_data.T).flatt
 velocity_magnitude_data = np.linalg.norm(velocity_data,2,0)
 velocity_magnitude_data[velocity_magnitude_data < 8e-10] = 1
 curvature_data = cross_product_norm/velocity_magnitude_data**3
-angular_rate = 
+# angular_rate = 
 
 v_x_array_discrete = (x_array[1:] - x_array[0:-1])/dt
 v_y_array_discrete = (y_array[1:] - y_array[0:-1])/dt

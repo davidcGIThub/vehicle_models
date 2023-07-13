@@ -35,8 +35,6 @@ bike = BicycleModel(x = 0,
 max_beta = np.arctan2(lr*np.tan(delta_max), L)
 max_curvature = np.tan(delta_max)*np.cos(max_beta)/L
 
-
-
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal', autoscale_on=False,
                      xlim=(-x_limits,x_limits), ylim=(-y_limits,y_limits))

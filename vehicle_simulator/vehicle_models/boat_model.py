@@ -4,11 +4,9 @@ Boat Model Class
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from vehicle_simulator.vehicle_models.vehicle_model_2D import VehicleModel
 
-# velocity motion model
-import numpy as np 
-
-class BoatModel:
+class BoatModel(VehicleModel):
 
     def __init__(self, 
                  x = 0, 

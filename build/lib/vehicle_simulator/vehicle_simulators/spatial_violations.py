@@ -1,0 +1,93 @@
+import numpy as np
+import sys
+from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
+
+def get_box_violations_from_spline(box_list,intervals_per_box, control_points, order):
+    spline_eval = BsplineEvaluator(order)
+    points_per_interval = 1000
+    path_data = spline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, points_per_interval)
+    closest_distances_to_sfc_walls = np.zeros(len(box_list))
+    for j in range(len(box_list)):
+        box_points = box_list[j]
+        num_prev_intervals = np.sum(intervals_per_box[0:j])
+        num_intervals = intervals_per_box[j]
+        start_index = int(num_prev_intervals*points_per_interval)
+        end_index = int(num_prev_intervals*points_per_interval + num_intervals*points_per_interval)
+        interval_data = path_data[:,start_index:end_index]
+        distance_sfc = get_greatest_box_violation_distance(box_points, interval_data)
+        closest_distances_to_sfc_walls[j] = distance_sfc
+    return closest_distances_to_sfc_walls
+
+def get_greatest_box_violation_distance(box_points, points):
+    num_box_points = np.shape(box_points)[1]
+    num_points = np.shape(points)[1]
+    center_point = get_box_center(box_points)
+    min_distance = sys.float_info.max
+    for j in range(num_points):
+        point = points[:,j]
+        for i in range(num_box_points - 2):
+            A = box_points[:,i  ]
+            B = box_points[:,i+1]
+            C = box_points[:,i+2]
+            distance = get_distance_to_wall(point, center_point, A,B,C)
+            if distance < min_distance:
+                min_distance = distance
+    return min_distance
+
+def get_box_violation_distance(box_points, point):
+    num_points = np.shape(box_points)[1]
+    center_point = get_box_center(box_points)
+    min_distance = sys.float_info.max
+    for i in range(num_points - 2):
+        A = box_points[:,i  ]
+        B = box_points[:,i+1]
+        C = box_points[:,i+2]
+        distance = get_distance_to_wall(point, center_point, A,B,C)
+        if distance < min_distance:
+            min_distance = distance
+    return min_distance
+
+def get_box_center(box_points):
+    unique_points = np.unique(box_points, axis=1)
+    center = np.mean(unique_points,axis=1)
+    return center
+
+def get_distance_to_wall(point, box_center, A,B,C):
+    distance = get_distance_to_plane(point, A,B,C)
+    side = check_if_points_on_same_side_of_plane(point, box_center, A, B, C)
+    return distance*side
+
+def get_distance_to_plane(point, A,B,C):
+    normal_vec = get_normal_vector(A,B,C)
+    a = normal_vec.item(0)
+    b = normal_vec.item(1)
+    c = normal_vec.item(2)
+    x0 = point.item(0)
+    y0 = point.item(1)
+    z0 = point.item(2)
+    d = -(a*A.item(0) + b*A.item(1) + c*A.item(2))
+    distance = (a*x0 + b*y0 + c*z0 + d)/np.sqrt(a**2 + b**2 + c**2)
+    return np.abs(distance)
+
+def check_if_points_on_same_side_of_plane(point1, point2, A, B, C):
+    normal_vec = get_normal_vector(A,B,C)
+    value = 0
+    if np.dot(normal_vec, point1 - A) * np.dot(normal_vec, point2 - A) > 0:
+        value = 1
+    else:
+        value = -1
+    return value 
+
+def get_normal_vector(A,B,C):
+    normal_vec = np.cross((B-A), (C-A))
+    return normal_vec
+
+
+def get_obstacle_violations(obstacle_list, location_data):
+    closest_distances_to_obstacles = np.array([len(obstacle_list)])
+    for i in range(len(obstacle_list)):
+        obstacle = obstacle_list[i]
+        obstacle_center = obstacle[0:3][:,None]
+        obstacle_radius = obstacle[3]
+        distance_obstacle = np.linalg.norm(location_data - obstacle_center,2,0) - obstacle_radius
+        closest_distances_to_obstacles[i] = distance_obstacle
