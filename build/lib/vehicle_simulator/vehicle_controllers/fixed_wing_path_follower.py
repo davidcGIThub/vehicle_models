@@ -37,6 +37,9 @@ class FixedWingSplinePathFollower:
                 path_vector.flatten()*desired_airspeed*self._path_gain
         desired_direction_vector = desired_direction_vector/ np.linalg.norm(desired_direction_vector)
         return desired_direction_vector
+    
+    def get_order(self):
+        return self._order
 
     
 

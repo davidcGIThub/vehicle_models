@@ -1,10 +1,11 @@
 import numpy as np
 from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingParameters
 from vehicle_simulator.vehicle_models.vehicle_model_3D import VehicleModel3D
+import matplotlib.pyplot as plt
 
 class FixedWingModel(VehicleModel3D):
-    def __init__(self, ax, vehicle_parameters: FixedWingParameters = FixedWingParameters(),
-                  wingspan = 0.2, fuselage_length = 0.35,
+    def __init__(self, ax=None, vehicle_parameters: FixedWingParameters = FixedWingParameters(),
+                  wingspan = 3, fuselage_length = 3,
                     state = np.array([0,0,-50,25,0,0,1,0,0,0,0,0,0])):
         self._north = state.item(0)  # initial north position
         self._east = state.item(1)  # initial east position
@@ -30,14 +31,22 @@ class FixedWingModel(VehicleModel3D):
         quaternion = np.array([self._e0, self._e1, self._e2, self._e3])
         self.rotation = self._Quaternion2Rotation(quaternion)
         self.ax = ax
-        self.fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
-        self.wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
-        self.tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
-        self.rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+        if self.ax is not None:
+            self.fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+            self.wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
+            self.tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
+            self.rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
         
     def update(self, delta, wind, dt):
         self._update_dynamics(delta, wind, dt)
         self.update_graphics()
+
+    def reset_graphic_axes(self, ax):
+        self.ax = ax
+        self.fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+        self.wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        self.tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
+        self.rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
 
     def get_state(self):
         state = np.array([self._north, self._east, self._down,
@@ -312,21 +321,25 @@ class FixedWingModel(VehicleModel3D):
         return R
 
     #### Graphic Functions ####
-    def plot_plane(self, ax):
-        fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
-        wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
-        tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
-        rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
-        self._draw_fuselage(fuselage)
-        self._draw_wings(wings)
-        self._draw_tail(tail)
-        self._draw_rudder(rudder)
+    def plot_plane(self, ax=None):
+        if self.ax is not None or ax is not None:
+            if ax is None:
+                ax = self.ax
+            fuselage, = self.ax.plot([], [], [], lw=2, color=self._fuselage_color)
+            wings, = self.ax.plot([], [], [], lw=2, color=self._wings_color)
+            tail, = self.ax.plot([], [], [], lw=2, color=self._wings_color)
+            rudder, = self.ax.plot([], [], [], lw=2, color=self._fuselage_color)
+            self._draw_fuselage(fuselage)
+            self._draw_wings(wings)
+            self._draw_tail(tail)
+            self._draw_rudder(rudder)
 
     def update_graphics(self):
         self.translation = np.array([[self._north],[self._east],[self._down]])
         quaternion = np.array([self._e0, self._e1, self._e2, self._e3])
         self.rotation = self._Quaternion2Rotation(quaternion)
-        self._draw()
+        if self.ax is not None:
+            self._draw()
 
     def _draw(self):
         self._draw_fuselage(self.fuselage)

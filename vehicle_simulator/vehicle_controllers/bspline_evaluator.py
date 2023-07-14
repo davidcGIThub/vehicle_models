@@ -10,7 +10,7 @@ class BsplineEvaluator:
 
     def get_closest_point_and_derivatives(self, control_points, scale_factor, position):
         control_point_set = self.__get_closest_control_point_set(control_points, position)
-        closest_point, t = self.__get_closest_point_and_t(control_point_set, scale_factor, position)
+        closest_point, t = self.get_closest_point_and_t(control_point_set, scale_factor, position)
         velocity_vector = self.__get_velocity_vector(t, control_point_set, scale_factor)
         acceleration_vector = self.__get_acceleration_vector(t, control_point_set, scale_factor)
         return closest_point, velocity_vector, acceleration_vector
@@ -26,7 +26,7 @@ class BsplineEvaluator:
         return control_point_set
 
     
-    def __get_closest_point_and_t(self, control_points, scale_factor, position):
+    def get_closest_point_and_t(self, control_points, scale_factor, position):
         dataset = self.matrix_bspline_evaluation_for_dataset(control_points, \
                     self._order, self._num_points_to_check_per_interval)
         distances = np.linalg.norm(position.flatten()[:,None] - dataset,2,0)

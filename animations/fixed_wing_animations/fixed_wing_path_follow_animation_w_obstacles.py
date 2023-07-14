@@ -11,6 +11,7 @@ from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingPara
 from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWingControlParameters, FixedWingAutopilot
 from vehicle_simulator.vehicle_controllers.fixed_wing_path_follower import FixedWingSplinePathFollower
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
+from vehicle_simulator.vehicle_simulators.spatial_violations import Obstacle, plot_3D_obstacle
 from time import sleep
 
 
@@ -28,17 +29,12 @@ sfc_points = np.array([[ 8,  -2,  -2,   8,   8,  -2,  -2,   8,   8,   8,   8,   
  [-1,  -1,   1,   1,   1,   1,  -1,  -1,  -1,   1,   1,  -1,  -1,  -1, 1,   1. ],
  [-1.5, -1.5, -1.5, -1.5,  1.5,  1.5,  1.5,  1.5, -1.5, -1.5,  1.5,  1.5,  1.5, -1.5, -1.5,  1.5]])*10
 
-obstacle_x_data = np.array([[15, 15.34202014, 15.64278761, 15.8660254,  15.98480775, 15.98480775, 15.8660254,  15.64278761, 15.34202014, 15],
-                            [15,15.32348855, 15.6079596,  15.81910176, 15.93144815, 15.93144815, 15.81910176, 15.6079596,  15.32348855, 15]])*10 - 150
-obstacle_y_data = np.array([[-10, -10, -10, -10, -10, -10, -10, -10, -10, -10 ],
-                            [-10, -9.88894624, -9.7912872, -9.71880201, -9.68023345,  -9.68023345,  -9.71880201,  -9.7912872,   -9.88894624, -10]])*10 + 100
-obstacle_z_data = np.array([[7, 6.93969262, 6.76604444, 6.5, 6.17364818, 5.82635182, 5.5, 5.23395556, 5.06030738, 5],
-                             [7,6.93969262, 6.76604444, 6.5, 6.17364818, 5.82635182, 5.5, 5.23395556, 5.06030738, 5]])*10 - 60
+obstacle = Obstacle(np.array([0,0,0]), 10)
  
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
-fig = plt.figure()
+fig = plt.figure("blah")
 ax = plt.axes(projection='3d')
 fig.add_axes(ax)
 north = 0
@@ -81,6 +77,7 @@ def update_line(num, plane_model: FixedWingModel, autopilot: FixedWingAutopilot,
     ax.set_xlim3d([x-frame_width/2, x+frame_width/2])
     ax.set_ylim3d([y-frame_width/2, y+frame_width/2])
     ax.set_zlim3d([z-frame_width/2, z+frame_width/2])
+    plane_model.plot_plane()
 
 # Setting the axes properties
 ax.set_xlabel('X')
@@ -90,7 +87,7 @@ ax.set_title('Plane Model Test')
 ax.view_init(elev=190, azim=45)
 ax.plot(position_array[0,:], position_array[1,:], position_array[2,:], color="tab:blue")
 ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)
-ax.plot_surface(obstacle_x_data, obstacle_y_data, obstacle_z_data, color="r")
+plot_3D_obstacle(obstacle, ax)
 ax.scatter(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o")
 # Creating the Animation object
 delayBetweenFrames_ms = 50

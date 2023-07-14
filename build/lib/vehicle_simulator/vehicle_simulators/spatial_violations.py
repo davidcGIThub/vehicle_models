@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
+from dataclasses import dataclass
 
 def get_box_violations_from_spline(box_list,intervals_per_box, control_points, order):
     spline_eval = BsplineEvaluator(order)
@@ -83,11 +84,27 @@ def get_normal_vector(A,B,C):
     return normal_vec
 
 
-def get_obstacle_violations(obstacle_list, location_data):
-    closest_distances_to_obstacles = np.array([len(obstacle_list)])
+def get_obstacle_violations(obstacle_list: 'list[Obstacle]', location_data):
+    closest_distances_to_obstacles = np.zeros(len(obstacle_list))
+    print("obstacle list in func: " , obstacle_list)
     for i in range(len(obstacle_list)):
         obstacle = obstacle_list[i]
-        obstacle_center = obstacle[0:3][:,None]
-        obstacle_radius = obstacle[3]
-        distance_obstacle = np.linalg.norm(location_data - obstacle_center,2,0) - obstacle_radius
+        obstacle_center = obstacle.center.flatten()[:,None]
+        distance_obstacle = np.min(np.linalg.norm(location_data - obstacle_center,2,0) - obstacle.radius)
         closest_distances_to_obstacles[i] = distance_obstacle
+        
+@dataclass
+class Obstacle:
+    center: np.ndarray
+    radius: np.double
+
+def plot_3D_obstacle(obstacle: Obstacle, ax):
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    x = obstacle.radius * np.cos(u)*np.sin(v) + obstacle.center.item(0)
+    y = obstacle.radius * np.sin(u)*np.sin(v) + obstacle.center.item(1)
+    z = obstacle.radius * np.cos(v) + obstacle.center.item(2)
+    ax.plot_surface(x, y, z, color="r")
+
+def plot_3D_obstacles(obstacles: list, ax):
+    for i in range(len(obstacles)):
+        plot_3D_obstacle(obstacles[i], ax)
