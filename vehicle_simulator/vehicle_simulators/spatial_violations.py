@@ -6,7 +6,7 @@ from dataclasses import dataclass
 def get_box_violations_from_spline(box_list,intervals_per_box, control_points, order):
     spline_eval = BsplineEvaluator(order)
     points_per_interval = 1000
-    path_data = spline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, points_per_interval)
+    path_data = spline_eval.matrix_bspline_evaluation_for_dataset(control_points, points_per_interval)
     closest_distances_to_sfc_walls = np.zeros(len(box_list))
     for j in range(len(box_list)):
         box_points = box_list[j]

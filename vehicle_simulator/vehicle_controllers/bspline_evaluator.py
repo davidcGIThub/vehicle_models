@@ -9,33 +9,32 @@ class BsplineEvaluator:
         self._num_points_to_check_per_interval = num_points_to_check_per_interval
 
     def get_closest_point_and_derivatives(self, control_points, scale_factor, position):
-        control_point_set = self.__get_closest_control_point_set(control_points, position)
+        control_point_set = self.get_closest_control_point_set(control_points, position)
         closest_point, t = self.get_closest_point_and_t(control_point_set, scale_factor, position)
         velocity_vector = self.__get_velocity_vector(t, control_point_set, scale_factor)
         acceleration_vector = self.__get_acceleration_vector(t, control_point_set, scale_factor)
         return closest_point, velocity_vector, acceleration_vector
 
-    def __get_closest_control_point_set(self, control_points, position):
+    def get_closest_control_point_set(self, control_points, position):
         num_control_points = self.__count_number_of_control_points(control_points)
-        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, \
-                self._order, self._initial_num_points_to_check_per_interval)
+        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, 
+                        self._initial_num_points_to_check_per_interval)
         distances = np.linalg.norm(position.flatten()[:,None] - dataset,2,0)
         num_intervals = num_control_points - self._order
         intial_ctrl_pt_index = int(np.argmin(distances)/len(distances)*num_intervals)
         control_point_set = control_points[:,intial_ctrl_pt_index:intial_ctrl_pt_index+self._order+1]
         return control_point_set
 
-    
     def get_closest_point_and_t(self, control_points, scale_factor, position):
-        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, \
-                    self._order, self._num_points_to_check_per_interval)
+        dataset = self.matrix_bspline_evaluation_for_dataset(control_points, 
+                        self._num_points_to_check_per_interval)
         distances = np.linalg.norm(position.flatten()[:,None] - dataset,2,0)
         closest_point_index = np.argmin(distances)
         closest_point = dataset[:,closest_point_index][:,None]
         t = closest_point_index/len(distances)
         return closest_point, t*scale_factor
     
-    def matrix_bspline_evaluation_for_dataset(self, control_points, order, num_points_per_interval):
+    def matrix_bspline_evaluation_for_dataset(self, control_points, num_points_per_interval):
         """
         This function evaluates the B spline for a given time data-set
         """
@@ -43,14 +42,14 @@ class BsplineEvaluator:
         num_ppi = num_points_per_interval
         dimension = self.__get_dimension(control_points)
         number_of_control_points = self.__count_number_of_control_points(control_points)
-        num_intervals = number_of_control_points - order
+        num_intervals = number_of_control_points - self._order
         #create steps matrix
         steps_array = np.linspace(0,1,num_ppi+1)
-        L = np.ones((order+1,num_ppi+1))
-        for i in range(order+1):
-            L[i,:] = steps_array**(order-i)
+        L = np.ones((self._order+1,num_ppi+1))
+        for i in range(self._order+1):
+            L[i,:] = steps_array**(self._order-i)
         # Find M matrix
-        M = self.__get_M_matrix(order)
+        M = self.__get_M_matrix(self._order)
         #Evaluate spline data
         if dimension > 1:
             spline_data = np.zeros((dimension,num_intervals*num_ppi+1))
@@ -58,9 +57,9 @@ class BsplineEvaluator:
             spline_data = np.zeros(num_intervals*num_ppi+1)
         for i in range(num_intervals):
             if dimension > 1:
-                P = control_points[:,i:i+order+1]
+                P = control_points[:,i:i+self._order+1]
             else:
-                P = control_points[i:i+order+1]
+                P = control_points[i:i+self._order+1]
             spline_data_over_interval = np.dot(np.dot(P,M),L)
             if dimension > 1:
                 if i == num_intervals-1:
@@ -73,6 +72,22 @@ class BsplineEvaluator:
                 else:
                     spline_data[i*num_ppi:(i+1)*num_ppi] = spline_data_over_interval[0:num_ppi]
         return spline_data
+    
+    def get_distance_to_endpoint(self, control_points: np.ndarray, position: np.ndarray):
+        end_control_points = control_points[:,-(self._order+1):]
+        M = self.__get_M_matrix(self._order)
+        T = self.__get_T_vector(self._order, 1,0,1)
+        end_point = np.dot(end_control_points,np.dot(M,T))
+        distance = np.linalg.norm(end_point.flatten() - position.flatten())
+        return distance
+    
+    def get_distance_to_startpoint(self, control_points: np.ndarray, position: np.ndarray):
+        start_control_points = control_points[:,0:self._order+1]
+        M = self.__get_M_matrix(self._order)
+        T = self.__get_T_vector(self._order, 0,0,1)
+        start_point = np.dot(start_control_points,np.dot(M,T))
+        distance = np.linalg.norm(start_point.flatten() - position.flatten())
+        return distance
     
     def __get_velocity_vector(self, t, control_point_set, scale_factor):
         M = self.__get_M_matrix(self._order)

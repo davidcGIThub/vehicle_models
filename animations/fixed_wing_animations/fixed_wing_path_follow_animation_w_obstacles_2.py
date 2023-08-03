@@ -24,7 +24,7 @@ control_points = np.array([[-18.26855358,   0.70966115,  15.429909,    22.011218
  [100.25649204,  99.87175398, 100.25649204, 101.68637201, 103.4207176,
   104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[0]])
 bspline_eval = BsplineEvaluator(order)
-position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, 1000)
+position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, 1000)
 waypoints = position_array[:,np.array([0,500,1000])]
 sfc_points = np.array([[ 8,  -2,  -2,   8,   8,  -2,  -2,   8,   8,   8,   8,   8,  -2,  -2, -2,  -2],
  [-1,  -1,   1,   1,   1,   1,  -1,  -1,  -1,   1,   1,  -1,  -1,  -1, 1,   1. ],
@@ -44,7 +44,7 @@ fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
 state = np.array([0,0,0,25,0,0,1,0,0,0,0,0,0])
-plane_model = FixedWingModel(state=state)
+plane_model = FixedWingModel(state=state,wingspan=30,fuselage_length=30)
 autopilot = FixedWingAutopilot(control_parameters)
 path_follower = FixedWingSplinePathFollower(order, distance_gain=5)
 plane_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower)
@@ -53,9 +53,11 @@ dt = 0.01
 run_time = 20
 sleep_time=0
 animate = True
-plot= False
+plot= True
 intervals_per_sfc = [2,3]
+instances_per_plot=10
+frame_width = 20
 plane_sim.run_simulation(control_points, desired_speed, 
-                       obstacle_list, sfc_list,
-                       intervals_per_sfc, dt, run_time,
-                       animate, frame_width=30)
+                        obstacle_list, sfc_list,
+                        intervals_per_sfc, waypoints, dt, run_time, frame_width,
+                        animate, plot, instances_per_plot)

@@ -23,7 +23,7 @@ control_points = np.array([[-18.26855358,   0.70966115,  15.429909,    22.011218
  [100.25649204,  99.87175398, 100.25649204, 101.68637201, 103.4207176,
   104.71897844, 105.14051078, 104.71897844]]) * np.array([[15],[10],[0]])
 bspline_eval = BsplineEvaluator(order)
-position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, order, 1000)
+position_array = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points, 1000)
 waypoints = position_array[:,np.array([0,500,1000])]
 sfc_points = np.array([[ 8,  -2,  -2,   8,   8,  -2,  -2,   8,   8,   8,   8,   8,  -2,  -2, -2,  -2],
  [-1,  -1,   1,   1,   1,   1,  -1,  -1,  -1,   1,   1,  -1,  -1,  -1, 1,   1. ],

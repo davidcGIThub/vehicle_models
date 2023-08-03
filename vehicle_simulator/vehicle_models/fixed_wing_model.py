@@ -325,14 +325,15 @@ class FixedWingModel(VehicleModel3D):
         if self.ax is not None or ax is not None:
             if ax is None:
                 ax = self.ax
-            fuselage, = self.ax.plot([], [], [], lw=2, color=self._fuselage_color)
-            wings, = self.ax.plot([], [], [], lw=2, color=self._wings_color)
-            tail, = self.ax.plot([], [], [], lw=2, color=self._wings_color)
-            rudder, = self.ax.plot([], [], [], lw=2, color=self._fuselage_color)
+            fuselage, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+            wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
+            tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
+            rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
             self._draw_fuselage(fuselage)
             self._draw_wings(wings)
             self._draw_tail(tail)
             self._draw_rudder(rudder)
+            print("plotting: ")
 
     def update_graphics(self):
         self.translation = np.array([[self._north],[self._east],[self._down]])

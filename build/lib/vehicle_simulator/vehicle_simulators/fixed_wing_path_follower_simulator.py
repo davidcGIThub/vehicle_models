@@ -28,9 +28,9 @@ class FixedWingPathFollowingSimulator:
 
     def run_simulation(self, path_control_points, desired_speed, 
                        obstacle_list:'list[Obstacle]' = [], sfc_list:list = [],
-                       intervals_per_sfc: np.ndarray = np.array([]), 
-                       dt: float = 0.01, run_time: float= 30,
-                       animate = True, frame_width = 15):
+                       intervals_per_sfc: np.ndarray = np.array([]), waypoints=np.array([]),
+                       dt: float = 0.01, run_time: float= 30, frame_width = 15,
+                       animate = True, plot = True, instances_per_plot=10):
         states_list, vehicle_location_data, path_data, closest_path_point_data, \
             closest_distances_to_obstacles, closest_distances_to_sfc_walls \
             = self.collect_simulation_data(path_control_points, desired_speed,
@@ -39,8 +39,11 @@ class FixedWingPathFollowingSimulator:
         if animate == True:
             self.animate_simulation(states_list, 
                            path_data, closest_path_point_data, 
-                           obstacle_list, sfc_list, waypoints=np.array([]), 
+                           obstacle_list, sfc_list, waypoints=waypoints, 
                            frame_width=frame_width, dt=0.01)
+        if plot == True:
+            self.plot_simulation(states_list, vehicle_location_data, path_data, closest_path_point_data, 
+                                 obstacle_list, sfc_list, waypoints, instances_per_plot, dt)
         tracking_error = np.linalg.norm(vehicle_location_data - closest_path_point_data, 2, 0)
         return states_list, tracking_error, closest_distances_to_obstacles, closest_distances_to_sfc_walls
 
@@ -56,7 +59,7 @@ class FixedWingPathFollowingSimulator:
         closest_path_point_data = np.zeros((3,num_data_points))
         wind = np.array([0,0,0,0,0,0])
         states_list = []
-        path_data = self._spline_eval.matrix_bspline_evaluation_for_dataset(path_control_points,self._order,1000)
+        path_data = self._spline_eval.matrix_bspline_evaluation_for_dataset(path_control_points,1000)
         for i in range(num_data_points):
             state = self._plane_model.get_state()
             position = np.array([state.item(0), state.item(1), state.item(2)])
@@ -82,11 +85,11 @@ class FixedWingPathFollowingSimulator:
         ax = plt.axes(projection='3d')
         print(type(ax))
         fig.add_axes(ax)
-        center_of_mass, = ax.plot([],[],[],lw=.5,color="tab:blue", marker = 'o')
+        closest_point, = ax.plot([],[],[],lw=.5,color="tab:blue", marker = 'o')
         ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.5)
         self._plane_model.reset_graphic_axes(ax)
         if waypoints.size != 0:
-            ax.scatter(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o")
+            ax.scatter(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", color="tab:green")
         plot_3D_obstacles(obstacle_list, ax)
         for j in range(len(sfc_list)):
             sfc_points = sfc_list[j]
@@ -101,9 +104,9 @@ class FixedWingPathFollowingSimulator:
             ax.set_xlim3d([x-frame_width/2, x+frame_width/2])
             ax.set_ylim3d([y-frame_width/2, y+frame_width/2])
             ax.set_zlim3d([z-frame_width/2, z+frame_width/2])
-            center_of_mass.set_xdata(closest_path_point_data[0,num])
-            center_of_mass.set_ydata(closest_path_point_data[1,num])
-            center_of_mass.set_3d_properties(closest_path_point_data[2,num])
+            closest_point.set_xdata(closest_path_point_data[0,num])
+            closest_point.set_ydata(closest_path_point_data[1,num])
+            closest_point.set_3d_properties(closest_path_point_data[2,num])
         # Setting the axes properties
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -115,7 +118,57 @@ class FixedWingPathFollowingSimulator:
         line_ani = animation.FuncAnimation(fig, update_line, fargs=[self._plane_model] , interval=delayBetweenFrames_ms, blit=False)
         plt.show()
 
+    def plot_simulation(self, 
+                           states_list: np.ndarray,
+                           vehicle_location_data: np.ndarray, 
+                           path_data: np.ndarray,
+                           closest_path_point_data: np.ndarray,
+                           obstacle_list:list = [], sfc_list:list = [],
+                           waypoints: np.ndarray = np.array([]),
+                           instances_per_plot = 10, dt: float = 0.01):
+        num_frames = np.shape(vehicle_location_data)[1]
+        steps = int(num_frames/instances_per_plot)
+        fig = plt.figure("Animation Plot")
+        ax = plt.axes(projection='3d')
+        fig.add_axes(ax)
+        ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue")
+        ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,0], linestyle="dashed", color="0.5" )
+        if waypoints.size != 0:
+            ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65)
+        plot_3D_obstacles(obstacle_list, ax)
+        for j in range(len(sfc_list)):
+            sfc_points = sfc_list[j]
+            ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)
+        for i in range(num_frames):
+            if i%steps == 0:
+                state = states_list[i]
+                print("i: " , i)
+                print("state: " , state)
+                self._plane_model.set_state(state)
+                self._plane_model.update_graphics()
+                self._plane_model.plot_plane(ax)
+                ax.plot([closest_path_point_data[0,i]],
+                        [closest_path_point_data[1,i]],
+                        [closest_path_point_data[2,i]],lw=.5,color="tab:blue", marker = 'o', fillstyle='none')
+                # ax.plot([vehicle_location_data[0,i]],
+                #         [vehicle_location_data[1,i]],
+                #         [vehicle_location_data[2,i]],lw=.5,color="0.5", marker ='o', markersize=3)
+        # Setting the axes properties
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        max_x = np.max(np.concatenate((vehicle_location_data[0,:], path_data[0,:])))
+        min_x = np.min(np.concatenate((vehicle_location_data[0,:], path_data[0,:])))
+        max_y = np.max(np.concatenate((vehicle_location_data[1,:], path_data[0,:])))
+        min_y = np.min(np.concatenate((vehicle_location_data[1,:], path_data[0,:])))
+        max_z = np.max(np.concatenate((vehicle_location_data[2,:], path_data[0,:])))
+        min_z = np.min(np.concatenate((vehicle_location_data[2,:], path_data[0,:])))
+        ax.set_xlim3d([min_x, max_x])
+        ax.set_ylim3d([min_y, max_y])
+        ax.set_zlim3d([min_z, max_z])
+        ax.set_title('Fixed Wing Path Following')
+        ax.view_init(elev=190, azim=45)
+        plt.show()
 
-    # def plot_simulation()
 
     # def plot_simulation_analytics()

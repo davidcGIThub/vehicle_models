@@ -25,7 +25,10 @@ class FixedWingSplinePathFollower:
 
     def get_desired_direction_vector(self, closest_point, position, closest_velocity_vector, 
                                      closest_acceleration_vector, desired_airspeed):
-        path_vector = closest_velocity_vector/np.linalg.norm(closest_velocity_vector)
+        norm_vel = np.linalg.norm(closest_velocity_vector)
+        path_vector = closest_velocity_vector/norm_vel
+        # accel_proj_onto_vel = np.dot(path_vector.flatten(), closest_acceleration_vector)*path_vector
+        # path_change_vector = closest_acceleration_vector - accel_proj_onto_vel
         path_change_vector = closest_acceleration_vector/np.linalg.norm(closest_acceleration_vector)
         distance_vector = closest_point.flatten() - position.flatten()
         distance = np.linalg.norm(distance_vector,2)
