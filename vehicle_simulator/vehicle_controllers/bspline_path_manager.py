@@ -2,7 +2,7 @@ import numpy as np
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 
 class SplinePathManager():
-    def __init__(self, control_point_list: 'list[np.ndarray]', order=3, tolerance = 50):
+    def __init__(self, control_point_list: 'list[np.ndarray]', order=3, tolerance = 1):
         self._control_point_list = control_point_list
         self._num_paths = len(control_point_list)
         self._path_index = 0
@@ -31,12 +31,13 @@ class SplinePathManager():
         for i in range(num_paths-1):
             path = path_data_list[i]
             next_path = path_data_list[i+1]
-            start_point_next_path = next_path[:,0] 
+            start_point_next_path = next_path[:,0][:,None] 
             distances_to_start = np.linalg.norm(path - start_point_next_path,2,0)
             index_end = np.argmin(distances_to_start)
             tracked_path = path[:,0:index_end]
             tracked_path_data_list.append(tracked_path)
         tracked_path_data_list.append(path_data_list[-1])
+        return tracked_path_data_list
 
 
     def get_num_paths(self):

@@ -141,7 +141,6 @@ class VehicleTrajectoryTrackingSimulator:
                                         init_func = init, repeat = False)
         plt.show()
 
-
     def plot_simulation(self, states_list: 'list[np.ndarray]', 
                            inputs_list: 'list[np.ndarray]',  
                            desired_trajectory_data: TrajectoryData,

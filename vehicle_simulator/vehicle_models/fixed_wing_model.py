@@ -20,6 +20,12 @@ class FixedWingModel(VehicleModel3D):
         self._p = state.item(10)  # initial roll rate
         self._q = state.item(11)  # initial pitch rate
         self._r = state.item(12)  # initial yaw rate
+        self._u_dot = 0
+        self._v_dot = 0
+        self._w_dot = 0
+        self._p_dot = 0
+        self._q_dot = 0
+        self._r_dot = 0
         #model parameters
         self._MAV = vehicle_parameters
         #Graphics
@@ -36,6 +42,10 @@ class FixedWingModel(VehicleModel3D):
             self.wings, = ax.plot([], [], [], lw=2, color=self._wings_color)
             self.tail, = ax.plot([], [], [], lw=2, color=self._wings_color)
             self.rudder, = ax.plot([], [], [], lw=2, color=self._fuselage_color)
+
+    def scale_plane_graphic(self, scale_factor):
+        self._fuselage_length = self._fuselage_length*scale_factor
+        self._wingspan = self._wingspan*scale_factor
         
     def update(self, delta, wind, dt):
         self._update_dynamics(delta, wind, dt)
@@ -55,6 +65,26 @@ class FixedWingModel(VehicleModel3D):
                     self._p, self._q, self._r])
         return state
     
+    def get_inertial_velocity(self):
+        quat = np.array([self._e0, self._e1, self._e2, self._e3])
+        body_vel = np.array([self._u, self._v, self._w])
+        pos_dot = self._Quaternion2Rotation(quat) @ body_vel
+        return pos_dot
+
+    def get_inertial_acceleration(self):
+        quat = np.array([self._e0, self._e1, self._e2, self._e3])
+        body_accel = np.array([self._u_dot, self._v_dot, self._w_dot])
+        accel = self._Quaternion2Rotation(quat) @ body_accel
+        return accel
+
+    def set_acceleration_states(self, derivatives):
+        self._u_dot = derivatives.item(3)
+        self._v_dot = derivatives.item(4)
+        self._w_dot = derivatives.item(5)
+        self._p_dot = derivatives.item(10)
+        self._q_dot = derivatives.item(11)
+        self._r_dot = derivatives.item(12)
+
     def set_state(self,state):
         self._north = state.item(0)  # initial north position
         self._east = state.item(1)  # initial east position
@@ -89,7 +119,9 @@ class FixedWingModel(VehicleModel3D):
         k2 = self._derivatives(state + time_step/2.*k1, forces_moments)
         k3 = self._derivatives(state + time_step/2.*k2, forces_moments)
         k4 = self._derivatives(state + time_step*k3, forces_moments)
-        new_state = state + time_step/6 * (k1 + 2*k2 + 2*k3 + k4)
+        derivatives = (k1 + 2*k2 + 2*k3 + k4)/6
+        new_state = state + time_step*derivatives
+        self.set_acceleration_states(derivatives)
         # normalize the quaternion
         e0 = new_state.item(6)
         e1 = new_state.item(7)
