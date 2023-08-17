@@ -223,21 +223,24 @@ class FixedWingPathFollowingSimulator:
         fig, axs = plt.subplots(4,1)
         axs[0].plot(time_data,tracking_error, color = 'tab:red', label="tracking\n error")
         axs[0].plot(time_data,tracking_error*0, color = 'k')
-        axs[0].set_ylabel("tracking error \n (m)")
-        axs[0].set_xlabel("time (sec)")
+        axs[0].set_ylabel("Tracking Error \n (m)")
+        axs[0].set_xlabel("Time (sec)")
 
         axs[1].plot(time_data, path_curvature*0 + max_curvature, color='k', label="max")
         axs[1].plot(time_data, path_curvature, color = 'tab:blue', label= "path")
         axs[1].plot(time_data, vehicle_curvature, color = 'tab:olive', label= "vehicle",linestyle="--")   
-        axs[1].set_ylabel("curvature")
-        axs[1].set_xlabel("time (sec)")
+        axs[1].set_ylabel("Curvature")
+        axs[1].set_xlabel("Time (sec)")
 
         axs[2].plot(time_data, path_incline*0 + max_incline, color='k', label="max")
         # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
         axs[2].plot(time_data, path_incline,color='tab:blue',label="path")
         axs[2].plot(time_data, vehicle_incline, color = 'tab:olive', label =  "vehicle",linestyle="--")
-        axs[2].set_ylabel("incline")
-        axs[2].set_xlabel("time (sec)")
+        axs[2].set_ylabel("Incline")
+        axs[2].set_xlabel("Time (sec)")
+
+        axs[3].set_xlabel("Distance To Obstacles")
+        axs[3].set_xlabel("Obstacles")
 
 
         axs[0].legend(loc='upper left')

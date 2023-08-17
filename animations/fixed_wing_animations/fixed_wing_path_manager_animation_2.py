@@ -37,8 +37,8 @@ position_array_1 = bspline_eval.matrix_bspline_evaluation_for_dataset(control_po
 # print("position_array_1: " , np.shape(position_array_1))
 position_array_2 = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points_2, 1000)
 control_point_list = [control_points_1, control_points_2]
-max_curvature = 2
-max_incline = 1
+max_curvature = 0.025
+max_incline = 0.01
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure

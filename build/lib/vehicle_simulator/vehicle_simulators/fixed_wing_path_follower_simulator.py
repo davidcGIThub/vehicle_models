@@ -209,6 +209,7 @@ class FixedWingPathFollowingSimulator:
         ax.set_zlim3d([min_z, max_z])
         ax.set_title('Fixed Wing Path Following')
         ax.view_init(elev=190, azim=45)
+        self.__set_axes_equal(ax) ## TODO fix axes size
         plt.show()
 
     def plot_simulation_analytics(self, vehicle_path_data: PathData, tracked_path_data: PathData, 
@@ -222,21 +223,24 @@ class FixedWingPathFollowingSimulator:
         fig, axs = plt.subplots(4,1)
         axs[0].plot(time_data,tracking_error, color = 'tab:red', label="tracking\n error")
         axs[0].plot(time_data,tracking_error*0, color = 'k')
-        axs[0].set_ylabel("tracking error \n (m)")
-        axs[0].set_xlabel("time (sec)")
+        axs[0].set_ylabel("Tracking Error \n (m)")
+        axs[0].set_xlabel("Time (sec)")
 
         axs[1].plot(time_data, path_curvature*0 + max_curvature, color='k', label="max")
         axs[1].plot(time_data, path_curvature, color = 'tab:blue', label= "path")
         axs[1].plot(time_data, vehicle_curvature, color = 'tab:olive', label= "vehicle",linestyle="--")   
-        axs[1].set_ylabel("curvature")
-        axs[1].set_xlabel("time (sec)")
+        axs[1].set_ylabel("Curvature")
+        axs[1].set_xlabel("Time (sec)")
 
         axs[2].plot(time_data, path_incline*0 + max_incline, color='k', label="max")
         # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
         axs[2].plot(time_data, path_incline,color='tab:blue',label="path")
         axs[2].plot(time_data, vehicle_incline, color = 'tab:olive', label =  "vehicle",linestyle="--")
-        axs[2].set_ylabel("incline")
-        axs[2].set_xlabel("time (sec)")
+        axs[2].set_ylabel("Incline")
+        axs[2].set_xlabel("Time (sec)")
+
+        axs[3].set_xlabel("Distance To Obstacles")
+        axs[3].set_xlabel("Obstacles")
 
 
         axs[0].legend(loc='upper left')
@@ -264,3 +268,32 @@ class FixedWingPathFollowingSimulator:
         inclination_data = vertical_velocity / horizontal_velocity
         return inclination_data
     
+
+    def __set_axes_equal(self, ax):
+        """
+        Make axes of 3D plot have equal scale so that spheres appear as spheres,
+        cubes as cubes, etc.
+
+        Input
+        ax: a matplotlib axis, e.g., as output from plt.gca().
+        """
+
+        x_limits = ax.get_xlim3d()
+        y_limits = ax.get_ylim3d()
+        z_limits = ax.get_zlim3d()
+
+        x_range = abs(x_limits[1] - x_limits[0])
+        x_middle = np.mean(x_limits)
+        y_range = abs(y_limits[1] - y_limits[0])
+        y_middle = np.mean(y_limits)
+        z_range = abs(z_limits[1] - z_limits[0])
+        z_middle = np.mean(z_limits)
+
+        # The plot bounding box is a sphere in the sense of the infinity
+        # norm, hence I call half the max range the plot radius.
+        plot_radius = 0.5*max([x_range, y_range, z_range])
+
+        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+        ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+        
