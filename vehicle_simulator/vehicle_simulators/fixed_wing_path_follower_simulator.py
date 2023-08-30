@@ -175,8 +175,11 @@ class FixedWingPathFollowingSimulator:
         fig.add_axes(ax)
         for i in range(len(path_data_list)):
             path_data = path_data_list[i]
-            ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue")
-        ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,0], linestyle="dashed", color="0.5" )
+            if i == 0:
+                ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue", label = "tracked path")
+            else:
+                ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue")
+        ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,0], linestyle="dashed", color="0.5", label = "vehicle path" )
         if waypoints.size != 0:
             ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65)
         plot_3D_obstacles(obstacle_list, ax)
@@ -191,9 +194,9 @@ class FixedWingPathFollowingSimulator:
                 self._plane_model.set_state(state)
                 self._plane_model.update_graphics()
                 self._plane_model.plot_plane(ax)
-                ax.plot([closest_path_point_data[0,i]],
+                ax.scatter([closest_path_point_data[0,i]],
                         [closest_path_point_data[1,i]],
-                        [closest_path_point_data[2,i]],lw=.5,color="tab:blue", marker = 'o', fillstyle='none')
+                        [closest_path_point_data[2,i]],lw=.5,color="tab:blue")
         # Setting the axes properties
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -209,6 +212,7 @@ class FixedWingPathFollowingSimulator:
         ax.set_zlim3d([min_z, max_z])
         ax.set_title('Fixed Wing Path Following')
         ax.view_init(elev=190, azim=45)
+        ax.legend()
         self.__set_axes_equal(ax) ## TODO fix axes size
         plt.show()
 
@@ -239,7 +243,7 @@ class FixedWingPathFollowingSimulator:
         axs[2].set_ylabel("Incline")
         axs[2].set_xlabel("Time (sec)")
 
-        axs[3].set_xlabel("Distance To Obstacles")
+        axs[3].set_ylabel("Distance \n To Obstacles")
         axs[3].set_xlabel("Obstacles")
 
 
