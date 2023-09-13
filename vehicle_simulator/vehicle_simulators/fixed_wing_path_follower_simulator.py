@@ -42,7 +42,7 @@ class FixedWingPathFollowingSimulator:
                        obstacle_list:'list[Obstacle]' = [], sfc_list:list = [],
                        intervals_per_sfc: np.ndarray = np.array([]), waypoints=np.array([]),
                        dt: float = 0.01, run_time: float= 30, frame_width = 15,
-                       animate = True, plot = True, instances_per_plot=10):
+                       animate = True, plot = True, instances_per_plot=10, graphic_scale=1):
 
         states_list, vehicle_path_data, path_data_list, tracked_path_data, \
             closest_distances_to_obstacles, closest_distances_to_sfc_walls \
@@ -56,7 +56,7 @@ class FixedWingPathFollowingSimulator:
                            frame_width=frame_width, dt=dt)
         if plot == True:
             self.plot_simulation(states_list, vehicle_path_data, path_data_list, tracked_path_data, 
-                                 obstacle_list, sfc_list, waypoints, instances_per_plot, dt)
+                                 obstacle_list, sfc_list, waypoints, instances_per_plot, graphic_scale=graphic_scale)
         return vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls
 
     def collect_simulation_data(self, path_control_point_list: 'list[np.ndarray]', 
@@ -81,12 +81,13 @@ class FixedWingPathFollowingSimulator:
             path_control_points = path_control_point_list[j]
             path_data = self._spline_eval.matrix_bspline_evaluation_for_dataset(path_control_points, 1000)
             path_data_list.append(path_data)
+        closest_point = path_data[:,0]
         for i in range(num_data_points):
             state = self._plane_model.get_state()
             position = np.array([state.item(0), state.item(1), state.item(2)])
             velocity = self._plane_model.get_inertial_velocity()
             acceleration = self._plane_model.get_inertial_acceleration()
-            path_control_points = self._path_manager.get_current_path_control_points(position)
+            path_control_points = self._path_manager.get_current_path_control_points(position, closest_point)
             cmds = self._path_follower.get_commands(path_control_points, position, desired_speed)
             delta = self._plane_autopilot.get_commands(cmds, state, wind, dt)
             self._plane_model.update(delta, wind, dt)
@@ -140,6 +141,14 @@ class FixedWingPathFollowingSimulator:
             x = state.item(0)
             y = state.item(1)
             z = state.item(2)
+            # e0 = state.item(6)
+            # e1 = state.item(7)
+            # e2 = state.item(8)
+            # e3 = state.item(9)
+            # phi = np.arctan2(2.0 * (e0 * e1 + e2 * e3), e0**2.0 + e3**2.0 - e1**2.0 - e2**2.0)
+            # theta = np.arcsin(2.0 * (e0 * e2 - e1 * e3))
+            # psi = np.arctan2(2.0 * (e0 * e3 + e1 * e2), e0**2.0 + e1**2.0 - e2**2.0 - e3**2.0)
+            # print("phi: " , phi*180/np.pi)
             ax.set_xlim3d([x-frame_width/2, x+frame_width/2])
             ax.set_ylim3d([y-frame_width/2, y+frame_width/2])
             ax.set_zlim3d([z-frame_width/2, z+frame_width/2])
@@ -164,7 +173,7 @@ class FixedWingPathFollowingSimulator:
                            tracked_path_data: PathData,
                            obstacle_list:list = [], sfc_list:list = [],
                            waypoints: np.ndarray = np.array([]),
-                           instances_per_plot = 10, dt: float = 0.01, graphic_scale = 10):
+                           instances_per_plot = 10, graphic_scale = 10):
         closest_path_point_data = tracked_path_data.location_data
         vehicle_location_data = vehicle_path_data.location_data
         num_frames = np.shape(vehicle_location_data)[1]
@@ -217,7 +226,7 @@ class FixedWingPathFollowingSimulator:
         plt.show()
 
     def plot_simulation_analytics(self, vehicle_path_data: PathData, tracked_path_data: PathData, 
-                max_curvature: float, max_incline: float):
+                max_curvature: float, max_incline: float, closest_distances_to_obstacles:np.ndarray = np.empty(0)):
         time_data = vehicle_path_data.time_data
         path_curvature = tracked_path_data.curvature_data
         vehicle_curvature = vehicle_path_data.curvature_data
@@ -242,15 +251,21 @@ class FixedWingPathFollowingSimulator:
         axs[2].plot(time_data, vehicle_incline, color = 'tab:olive', label =  "vehicle",linestyle="--")
         axs[2].set_ylabel("Incline")
         axs[2].set_xlabel("Time (sec)")
-
+        if np.size(closest_distances_to_obstacles) > 0:
+            for i in range(np.size(closest_distances_to_obstacles)):
+                distance = closest_distances_to_obstacles[i]
+                bar_label = "obstacle " + str(i+1)
+                if distance >= 0:
+                    color_bar = "tab:blue"
+                else:
+                    color_bar = "tab:red"
+                axs[3].bar(bar_label, distance, color=color_bar)
         axs[3].set_ylabel("Distance \n To Obstacles")
         axs[3].set_xlabel("Obstacles")
-
-
         axs[0].legend(loc='upper left')
         axs[1].legend(loc='lower left')
         axs[2].legend(loc='lower left')
-        axs[3].legend(loc='lower left')
+        # axs[3].legend(loc='lower left')
         # axs[0].tick_params(labelbottom = False, bottom = False)
         # axs[1].tick_params(labelbottom = False, bottom = False)
         # axs[2].tick_params(labelbottom = False, bottom = False)

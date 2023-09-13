@@ -92,6 +92,7 @@ def get_obstacle_violations(obstacle_list: 'list[Obstacle]', location_data):
         obstacle_center = obstacle.center.flatten()[:,None]
         distance_obstacle = np.min(np.linalg.norm(location_data - obstacle_center,2,0) - obstacle.radius)
         closest_distances_to_obstacles[i] = distance_obstacle
+    return closest_distances_to_obstacles
         
 @dataclass
 class Obstacle:

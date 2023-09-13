@@ -73,6 +73,13 @@ class BsplineEvaluator:
                     spline_data[i*num_ppi:(i+1)*num_ppi] = spline_data_over_interval[0:num_ppi]
         return spline_data
     
+    def get_end_point(self, control_points: np.ndarray):
+        end_control_points = control_points[:,-(self._order+1):]
+        M = self.__get_M_matrix(self._order)
+        T = self.__get_T_vector(self._order, 1,0,1)
+        end_point = np.dot(end_control_points,np.dot(M,T))
+        return end_point
+    
     def get_distance_to_endpoint(self, control_points: np.ndarray, position: np.ndarray):
         end_control_points = control_points[:,-(self._order+1):]
         M = self.__get_M_matrix(self._order)
