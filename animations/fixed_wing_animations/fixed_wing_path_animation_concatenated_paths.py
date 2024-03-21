@@ -19,7 +19,7 @@ from time import sleep
 
 
 order = 3
-desired_speed = 25
+desired_speed = 21.375
 control_points_1 = np.array([[-1.07492420e+02, -2.83848959e-21,  1.07492420e+02,  1.82460572e+02,
                               1.77879263e+02,  1.06184682e+02,  9.32950387e-01, -1.09916484e+02],
                             [-3.92419879e-19,  1.23142785e-19, -1.28381816e-19,  8.45441767e+01,
@@ -33,9 +33,9 @@ control_points_2 = np.array([[101.64932239,    0.85365222, -105.06393129, -203.6
                             670.13664262,  714.93167869,  670.13664262],
                           [ -18.11150593,  -17.94424703,  -18.11150593,  -19.14083048,  -20.50137237,
                             -21.76106676,  -22.11946662,  -21.76106676]])
-obstacle_1 = Obstacle(center=np.array([[25,],[25],[-20]]), radius = 20)
-obstacle_2 = Obstacle(center=np.array([[100,],[25],[-20]]), radius = 20)
-obstacle_list = [obstacle_1, obstacle_2]
+# obstacle_1 = Obstacle(center=np.array([[25,],[25],[-20]]), radius = 20)
+# obstacle_2 = Obstacle(center=np.array([[100,],[25],[-20]]), radius = 20)
+# obstacle_list = [obstacle_1, obstacle_2]
 bspline_eval = BsplineEvaluator(order)
 position_array_1 = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points_1, 1000)
 # print("position_array_1: " , np.shape(position_array_1))
@@ -70,12 +70,12 @@ plane_model = FixedWingModel(ax, fixed_wing_parameters,
                   wingspan = wingspan, fuselage_length = fuselage_length,
                     state = state0)
 autopilot = FixedWingAutopilot(control_parameters)
-path_follower = FixedWingSplinePathFollower(order, distance_gain=2, path_gain=2, feedforward_gain=4, feedforward_distance=3)
+path_follower = FixedWingSplinePathFollower(order, distance_gain=4, path_gain=3, feedforward_gain=2, feedforward_distance=5)
 path_manager = SplinePathManager(control_point_list)
 
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
 vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls \
-    = wing_sim.run_simulation(control_point_list, desired_speed, obstacle_list=obstacle_list, dt=0.1, run_time=48, graphic_scale=20)
+    = wing_sim.run_simulation(control_point_list, desired_speed, dt=0.1, run_time=48, graphic_scale=20)
 
 wing_sim.plot_simulation_analytics(vehicle_path_data, tracked_path_data,
-                max_curvature, max_incline, closest_distances_to_obstacles)
+                max_curvature, max_incline_angle=None, closest_distances_to_obstacles=closest_distances_to_obstacles)

@@ -98,6 +98,7 @@ def get_obstacle_violations(obstacle_list: 'list[Obstacle]', location_data):
 class Obstacle:
     center: np.ndarray
     radius: np.double
+    height: np.double
 
 def plot_3D_obstacle(obstacle: Obstacle, ax):
     u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
@@ -109,3 +110,39 @@ def plot_3D_obstacle(obstacle: Obstacle, ax):
 def plot_3D_obstacles(obstacles: list, ax):
     for i in range(len(obstacles)):
         plot_3D_obstacle(obstacles[i], ax)
+
+def plot_cylinder(obstacle: Obstacle, ax):
+    z = np.linspace(0, obstacle.height, 50)
+    theta = np.linspace(0, 2*np.pi, 50)
+    theta_grid, z_grid=np.meshgrid(theta, z)
+    x_grid = obstacle.radius*np.cos(theta_grid) + obstacle.center.item(0)
+    y_grid = obstacle.radius*np.sin(theta_grid) + obstacle.center.item(1)
+    ax.plot_surface(x_grid,y_grid,z_grid, color="r")
+
+def plot_cylinders(obstacles: list, ax):
+    for i in range(len(obstacles)):
+        plot_cylinder(obstacles[i], ax)
+
+
+
+
+
+
+
+
+
+def data_for_cylinder_along_z(center_x,center_y,radius,height_z):
+    z = np.linspace(0, height_z, 50)
+    theta = np.linspace(0, 2*np.pi, 50)
+    theta_grid, z_grid=np.meshgrid(theta, z)
+    x_grid = radius*np.cos(theta_grid) + center_x
+    y_grid = radius*np.sin(theta_grid) + center_y
+    return x_grid,y_grid,z_grid
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+Xc,Yc,Zc = data_for_cylinder_along_z(0.2,0.2,0.05,0.1)
+ax.plot_surface(Xc, Yc, Zc, alpha=0.5)

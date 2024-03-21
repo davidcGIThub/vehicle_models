@@ -11,7 +11,7 @@ from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWing
 from vehicle_simulator.vehicle_controllers.fixed_wing_path_follower import FixedWingSplinePathFollower
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 from vehicle_simulator.vehicle_simulators.spatial_violations import get_box_violations_from_spline, get_obstacle_violations, \
-    Obstacle, plot_3D_obstacles
+    Obstacle, plot_3D_obstacles, plot_cylinders
 from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePathManager
 from time import sleep
 import sys
@@ -188,10 +188,11 @@ class FixedWingPathFollowingSimulator:
                 ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue", label = "tracked path")
             else:
                 ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue")
-        ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,0], linestyle="dashed", color="0.5", label = "vehicle path" )
+        ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,:], linestyle="dashed", color="0.5", label = "vehicle path" )
         if waypoints.size != 0:
             ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65)
-        plot_3D_obstacles(obstacle_list, ax)
+        # plot_3D_obstacles(obstacle_list, ax)
+        plot_cylinders(obstacle_list, ax)
         for j in range(len(sfc_list)):
             sfc_points = sfc_list[j]
             ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)
@@ -226,7 +227,7 @@ class FixedWingPathFollowingSimulator:
         plt.show()
 
     def plot_simulation_analytics(self, vehicle_path_data: PathData, tracked_path_data: PathData, 
-                max_curvature: float, max_incline: float, closest_distances_to_obstacles:np.ndarray = np.empty(0)):
+                max_curvature: float, max_incline_angle: float, closest_distances_to_obstacles:np.ndarray = np.empty(0)):
         time_data = vehicle_path_data.time_data
         path_curvature = tracked_path_data.curvature_data
         vehicle_curvature = vehicle_path_data.curvature_data
@@ -244,12 +245,13 @@ class FixedWingPathFollowingSimulator:
         axs[1].plot(time_data, vehicle_curvature, color = 'tab:olive', label= "vehicle",linestyle="--")   
         axs[1].set_ylabel("Curvature")
         axs[1].set_xlabel("Time (sec)")
-
-        axs[2].plot(time_data, path_incline*0 + max_incline, color='k', label="max")
+        if max_incline_angle != None:
+            axs[2].plot(time_data, path_incline*0 + np.degrees(max_incline_angle), color='k', label="bounds")
+            axs[2].plot(time_data, path_incline*0 - np.degrees(max_incline_angle), color='k')
         # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
-        axs[2].plot(time_data, path_incline,color='tab:blue',label="path")
-        axs[2].plot(time_data, vehicle_incline, color = 'tab:olive', label =  "vehicle",linestyle="--")
-        axs[2].set_ylabel("Incline")
+        axs[2].plot(time_data, np.degrees(path_incline),color='tab:blue',label="path")
+        axs[2].plot(time_data, np.degrees(vehicle_incline), color = 'tab:olive', label =  "vehicle",linestyle="--")
+        axs[2].set_ylabel("Incline (deg)")
         axs[2].set_xlabel("Time (sec)")
         if np.size(closest_distances_to_obstacles) > 0:
             for i in range(np.size(closest_distances_to_obstacles)):
@@ -271,7 +273,6 @@ class FixedWingPathFollowingSimulator:
         # axs[2].tick_params(labelbottom = False, bottom = False)
         plt.show()
 
-
     def __calculate_curvature_data(self, velocity_data, acceleration_data):
             cross_product_norm = np.linalg.norm(np.transpose(np.cross(velocity_data.T, acceleration_data.T)),2,0)
             velocity_magnitude_data = np.linalg.norm(velocity_data,2,0)
@@ -284,19 +285,16 @@ class FixedWingPathFollowingSimulator:
         horizontal_velocity = np.linalg.norm(velocity_data[0:2,:],2,0)
         vertical_velocity[horizontal_velocity == 0] = sys.float_info.max
         horizontal_velocity[horizontal_velocity == 0] = 1
-        inclination_data = vertical_velocity / horizontal_velocity
+        inclination_data = np.arctan2(vertical_velocity, horizontal_velocity)
         return inclination_data
-    
 
     def __set_axes_equal(self, ax):
         """
         Make axes of 3D plot have equal scale so that spheres appear as spheres,
         cubes as cubes, etc.
-
         Input
         ax: a matplotlib axis, e.g., as output from plt.gca().
         """
-
         x_limits = ax.get_xlim3d()
         y_limits = ax.get_ylim3d()
         z_limits = ax.get_zlim3d()

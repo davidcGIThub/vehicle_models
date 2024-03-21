@@ -3,7 +3,7 @@ from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvalu
 
 class FixedWingSplinePathFollower:
 
-    def __init__(self, order, distance_gain = 1, path_gain = 1, feedforward_gain = 2, feedforward_distance = 5):
+    def __init__(self, order, distance_gain = 2, path_gain = 2, feedforward_gain = 2, feedforward_distance = 5):
         self._order = order
         self._path_gain = path_gain
         self._distance_gain = distance_gain
