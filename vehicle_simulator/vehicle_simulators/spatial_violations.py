@@ -112,7 +112,7 @@ def plot_3D_obstacles(obstacles: list, ax):
         plot_3D_obstacle(obstacles[i], ax)
 
 def plot_cylinder(obstacle: Obstacle, ax):
-    z = np.linspace(0, obstacle.height, 50)
+    z = np.linspace(0, -obstacle.height, 50)
     theta = np.linspace(0, 2*np.pi, 50)
     theta_grid, z_grid=np.meshgrid(theta, z)
     x_grid = obstacle.radius*np.cos(theta_grid) + obstacle.center.item(0)

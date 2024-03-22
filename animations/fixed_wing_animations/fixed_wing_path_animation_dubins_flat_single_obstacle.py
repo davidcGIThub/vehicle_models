@@ -35,9 +35,10 @@ from time import sleep
 states_arr = np.load('vehicle_states.npy')
 path_curvature_arr = np.load('path_curvature.npy')
 path_incline_arr = np.load('path_incline.npy')
-path_location_arr = np.load('path_location.npy')
-print("shape path location: " , np.shape(path_location_arr))
-time_arr = np.load('vehicle_time_data.npy')
+path_location_arr = np.load('path_location.npy').transpose()
+time_arr = np.load('time_arr.npy')
+parameters = np.load('parameters.npy')
+obstacle_data = np.load('obstacle_data.npy')
 states_list = []
 num_states = np.shape(states_arr)[0]
 vehicle_location_data = np.zeros((3,num_states))
@@ -46,11 +47,12 @@ vehicle_incline_data = np.zeros(num_states)
 closest_location_data = np.zeros((3,num_states))
 closest_curvature_data = np.zeros(num_states)
 closest_incline_data = np.zeros(num_states)
+
 for i in range(num_states):
     # vehicle states
     state = states_arr[i,:]
     states_list.append(state)
-    vehicle_location_data[:,i] = np.array([[state.item(0)],
+    vehicle_location_data[:,i][:,None] = np.array([[state.item(0)],
                                            [state.item(1)],
                                            [state.item(2)]])
     R = quaternion_to_rotation(state[6:10]) # rotation from body to world frame
@@ -61,10 +63,10 @@ for i in range(num_states):
         next_state = states_arr[i+1,:]
         next_velocity = quaternion_to_rotation(next_state[6:10]) @ np.array([[next_state[3]],[next_state[4]],[next_state[5]]])
         acceleration = (next_velocity - velocity) / (time_arr.item(i+1)-time_arr.item(i))
-        vehicle_curvature_data[i] = np.linalg.norm(np.cross(velocity,acceleration))/np.linalg.norm(velocity)**3
+        vehicle_curvature_data[i] = np.linalg.norm(np.cross(velocity.flatten(),acceleration.flatten()))/np.linalg.norm(velocity)**3
     vehicle_rise = velocity.item(2)
     vehicle_run = np.sqrt(velocity.item(0)**2 + velocity.item(1)**2)
-    vehicle_incline_data[i] = vehicle_rise/vehicle_run
+    vehicle_incline_data[i] = -np.arctan(vehicle_rise/vehicle_run)
 for i in range(num_states):
     #closest path data
     distances = np.linalg.norm(vehicle_location_data[:,i][:,None] - path_location_arr , 2 , 0)
@@ -76,10 +78,15 @@ for i in range(num_states):
 closest_time_data = time_arr
 vehicle_path_data = PathData(vehicle_location_data, vehicle_curvature_data.flatten(), vehicle_incline_data.flatten(), time_arr.flatten())
 path_time = np.linspace(0,time_arr[-1],len(time_arr.flatten()))
-path_data = PathData(path_location_arr, path_curvature_arr, path_incline_arr, path_time)
-path_data_list = [path_data]
+# path_data = PathData(path_location_arr, path_curvature_arr, path_incline_arr, path_time)
+path_data_list = [path_location_arr]
 closest_path_data = PathData(closest_location_data, closest_curvature_data, closest_incline_data, closest_time_data)
-
+obstacle_type = "cylinder" 
+if obstacle_data.item(0) == 1:
+    obstacle_type = "rect_prism"
+obstacle = Obstacle(center=np.array([obstacle_data.item(1) ,obstacle_data.item(2), 0]),radius= obstacle_data.item(3)/2 ,height= obstacle_data.item(4))
+obstacle_list = [obstacle]
+closest_distance_to_obstacle = np.min(np.linalg.norm(vehicle_location_data[0:2,:] - np.array([[obstacle_data.item(1)] ,[obstacle_data.item(2)]]),2,0)) - obstacle_data.item(3)/2
     # def set_state(self,state):
     #     self._north = state.item(0)  # initial north position
     #     self._east = state.item(1)  # initial east position
@@ -97,14 +104,14 @@ closest_path_data = PathData(closest_location_data, closest_curvature_data, clos
 
 
 order = 3
-desired_speed = 21.375
+desired_speed = parameters.item(0)
 
 # obstacle_1 = Obstacle(center=np.array([[25,],[25],[-20]]), radius = 20)
 # obstacle_2 = Obstacle(center=np.array([[100,],[25],[-20]]), radius = 20)
 # obstacle_list = [obstacle_1, obstacle_2]
 
-max_curvature = 0.01
-max_incline = 0.01
+max_curvature = parameters.item(1)
+max_incline = np.arctan(parameters.item(2))
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
@@ -135,16 +142,13 @@ plane_model = FixedWingModel(ax, fixed_wing_parameters,
                     state = state0)
 autopilot = FixedWingAutopilot(control_parameters)
 path_follower = FixedWingSplinePathFollower(order, distance_gain=4, path_gain=3, feedforward_gain=2, feedforward_distance=5)
-path_manager = SplinePathManager()
+control_points_1 = np.array([[-1.92718378e+02, -2.12381699e+00,  2.01213646e+02 , 4.35400071e+02],
+                             [-2.67206060e+01,  1.33603030e+01, -2.67206060e+01,  3.52323025e+01],
+                             [-7.84626885e+01,  9.23134424e+00, -7.84626885e+01, -1.66158330e+02]])
+control_point_list = [control_points_1]
+path_manager = SplinePathManager(control_point_list)
 
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
 
-wing_sim.plot_simulation(states_list, vehicle_path_data, path_data_list, closest_path_data)
-# def plot_simulation(self, 
-#                            states_list: np.ndarray,
-#                            vehicle_path_data: PathData, 
-#                            path_data_list: 'list[np.ndarray]',
-#                            tracked_path_data: PathData,
-#                            obstacle_list:list = [], sfc_list:list = [],
-#                            waypoints: np.ndarray = np.array([]),
-#                            instances_per_plot = 10, graphic_scale = 10):
+wing_sim.plot_simulation(states_list, vehicle_path_data, path_data_list, closest_path_data, obstacle_list=obstacle_list, obstacle_type=obstacle_type)
+wing_sim.plot_simulation_analytics(vehicle_path_data, closest_path_data, max_curvature, max_incline,closest_distances_to_obstacles=np.array([closest_distance_to_obstacle]))

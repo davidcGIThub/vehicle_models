@@ -121,7 +121,6 @@ class FixedWingPathFollowingSimulator:
         closest_path_point_data = tracked_path_data.location_data
         fig = plt.figure("Animation")
         ax = plt.axes(projection='3d')
-        print(type(ax))
         fig.add_axes(ax)
         closest_point, = ax.plot([],[],[],lw=.5,color="tab:blue", marker = 'o')
         for i in range(len(path_data_list)):
@@ -173,7 +172,7 @@ class FixedWingPathFollowingSimulator:
                            tracked_path_data: PathData,
                            obstacle_list:list = [], sfc_list:list = [],
                            waypoints: np.ndarray = np.array([]),
-                           instances_per_plot = 10, graphic_scale = 10):
+                           instances_per_plot = 10, graphic_scale = 10, obstacle_type = "sphere"):
         closest_path_point_data = tracked_path_data.location_data
         vehicle_location_data = vehicle_path_data.location_data
         num_frames = np.shape(vehicle_location_data)[1]
@@ -191,16 +190,16 @@ class FixedWingPathFollowingSimulator:
         ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,:], linestyle="dashed", color="0.5", label = "vehicle path" )
         if waypoints.size != 0:
             ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65)
-        # plot_3D_obstacles(obstacle_list, ax)
-        plot_cylinders(obstacle_list, ax)
+        if (obstacle_type == "sphere"):
+            plot_3D_obstacles(obstacle_list, ax)
+        elif (obstacle_type == "cylinder"):
+            plot_cylinders(obstacle_list, ax)
         for j in range(len(sfc_list)):
             sfc_points = sfc_list[j]
             ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)
         for i in range(num_frames):
             if i%steps == 0:
                 state = states_list[i]
-                print("i: " , i)
-                print("state: " , state)
                 self._plane_model.set_state(state)
                 self._plane_model.update_graphics()
                 self._plane_model.plot_plane(ax)
