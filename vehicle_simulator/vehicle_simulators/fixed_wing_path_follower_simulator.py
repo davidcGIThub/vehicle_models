@@ -42,7 +42,7 @@ class FixedWingPathFollowingSimulator:
                        obstacle_list:'list[Obstacle]' = [], sfc_list:list = [],
                        intervals_per_sfc: np.ndarray = np.array([]), waypoints=np.array([]),
                        dt: float = 0.01, run_time: float= 30, frame_width = 15,
-                       animate = True, plot = True, instances_per_plot=10, graphic_scale=1):
+                       animate = True, plot = True, instances_per_plot=10, graphic_scale=1, obstacle_type = "sphere"):
 
         states_list, vehicle_path_data, path_data_list, tracked_path_data, \
             closest_distances_to_obstacles, closest_distances_to_sfc_walls \
@@ -56,7 +56,7 @@ class FixedWingPathFollowingSimulator:
                            frame_width=frame_width, dt=dt)
         if plot == True:
             self.plot_simulation(states_list, vehicle_path_data, path_data_list, tracked_path_data, 
-                                 obstacle_list, sfc_list, waypoints, instances_per_plot, graphic_scale=graphic_scale)
+                                 obstacle_list, sfc_list, waypoints, instances_per_plot, graphic_scale=graphic_scale, obstacle_type=obstacle_type)
         return vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls
 
     def collect_simulation_data(self, path_control_point_list: 'list[np.ndarray]', 
@@ -212,10 +212,13 @@ class FixedWingPathFollowingSimulator:
         ax.set_zlabel('Z')
         max_x = np.max(np.concatenate((vehicle_location_data[0,:], path_data[0,:])))
         min_x = np.min(np.concatenate((vehicle_location_data[0,:], path_data[0,:])))
-        max_y = np.max(np.concatenate((vehicle_location_data[1,:], path_data[0,:])))
-        min_y = np.min(np.concatenate((vehicle_location_data[1,:], path_data[0,:])))
-        max_z = np.max(np.concatenate((vehicle_location_data[2,:], path_data[0,:])))
-        min_z = np.min(np.concatenate((vehicle_location_data[2,:], path_data[0,:])))
+        max_y = np.max(np.concatenate((vehicle_location_data[1,:], path_data[1,:])))
+        min_y = np.min(np.concatenate((vehicle_location_data[1,:], path_data[1,:])))
+        max_z = np.max(np.concatenate((vehicle_location_data[2,:], path_data[2,:])))
+        min_z = np.min(np.concatenate((vehicle_location_data[2,:], path_data[2,:])))
+        print("max_veh z: ", np.max(vehicle_location_data[2,:]))
+        print("max_path z: ", np.max(path_data[0,:]))
+        print("min_z: ", min_z)
         ax.set_xlim3d([min_x, max_x])
         ax.set_ylim3d([min_y, max_y])
         ax.set_zlim3d([min_z, max_z])

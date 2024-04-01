@@ -3,13 +3,17 @@ from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvalu
 
 class FixedWingSplinePathFollower:
 
-    def __init__(self, order, distance_gain = 2, path_gain = 2, feedforward_gain = 2, feedforward_distance = 5):
+    def __init__(self, order, distance_gain = 2, path_direction_gain = 2, feedforward_gain = 0.5, feedforward_distance = 5,
+                 integrator_gain = 0.05):
         self._order = order
-        self._path_gain = path_gain
+        self._path_direction_gain = path_direction_gain
         self._distance_gain = distance_gain
         self._feedforward_distance = feedforward_distance
         self._feedforward_gain = feedforward_gain
+        self._integrator_gain = integrator_gain
         self._spline_evaluator = BsplineEvaluator(self._order)
+        self._integrator_term = np.zeros(3)
+        self._prev_distance_vector = np.zeros(3)
 
     def get_commands(self, control_points, position, desired_airspeed):
         scale_factor = 1
@@ -25,20 +29,27 @@ class FixedWingSplinePathFollower:
 
     def get_desired_direction_vector(self, closest_point, position, closest_velocity_vector, 
                                      closest_acceleration_vector, desired_airspeed):
+        closest_curvature = np.linalg.norm(np.cross(closest_velocity_vector.flatten(), closest_acceleration_vector.flatten())) \
+                            / np.linalg.norm(closest_velocity_vector.flatten(),2)**3
         norm_vel = np.linalg.norm(closest_velocity_vector)
-        path_vector = closest_velocity_vector/norm_vel
-        # accel_proj_onto_vel = np.dot(path_vector.flatten(), closest_acceleration_vector)*path_vector
-        # path_change_vector = closest_acceleration_vector - accel_proj_onto_vel
-        path_change_vector = closest_acceleration_vector/np.linalg.norm(closest_acceleration_vector)
+        path_vector = (closest_velocity_vector/norm_vel).flatten()
+        accel_proj_onto_vel = np.dot(closest_acceleration_vector.flatten(), path_vector) * path_vector
+        path_change_vector = closest_acceleration_vector.flatten() - accel_proj_onto_vel.flatten()
+        path_change_vector = path_change_vector/np.linalg.norm(path_change_vector)
         distance_vector = closest_point.flatten() - position.flatten()
         distance = np.linalg.norm(distance_vector,2)
         if distance < self._feedforward_distance:
-            desired_direction_vector = distance_vector*self._distance_gain + \
-                path_vector.flatten()*desired_airspeed*self._path_gain + path_change_vector.flatten() * self._feedforward_gain
+            self._integrator_term += self._integrator_gain*(distance_vector + self._prev_distance_vector)/2
+            desired_direction_vector = distance_vector.flatten()*self._distance_gain + \
+                path_vector.flatten()*self._path_direction_gain + \
+                path_change_vector.flatten() * self._feedforward_gain * closest_curvature + \
+                self._integrator_term.flatten()
         else:
             desired_direction_vector = distance_vector*self._distance_gain + \
-                path_vector.flatten()*desired_airspeed*self._path_gain
+                path_vector.flatten()*self._path_direction_gain
+            self._integrator_term = np.zeros(3)
         desired_direction_vector = desired_direction_vector/ np.linalg.norm(desired_direction_vector)
+        self._prev_distance_vector = distance_vector
         return desired_direction_vector
     
     def get_order(self):
