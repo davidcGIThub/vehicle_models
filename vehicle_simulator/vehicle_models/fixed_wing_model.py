@@ -20,12 +20,10 @@ class FixedWingModel(VehicleModel3D):
         self._p = state.item(10)  # initial roll rate
         self._q = state.item(11)  # initial pitch rate
         self._r = state.item(12)  # initial yaw rate
-        self._u_dot = 0
-        self._v_dot = 0
-        self._w_dot = 0
-        self._p_dot = 0
-        self._q_dot = 0
-        self._r_dot = 0
+        self._north_ddot = 0
+        self._east_ddot = 0
+        self._down_ddot = 0
+
         #model parameters
         self._MAV = vehicle_parameters
         #Graphics
@@ -72,23 +70,23 @@ class FixedWingModel(VehicleModel3D):
         return pos_dot
 
     def get_inertial_acceleration(self):
-        quat = np.array([self._e0, self._e1, self._e2, self._e3])
-        body_accel = np.array([self._u_dot, self._v_dot, self._w_dot])
-        accel = self._Quaternion2Rotation(quat) @ body_accel
+        accel = np.array([self._north_ddot, self._east_ddot, self._down_ddot])
         return accel
 
-    def set_acceleration_states(self, derivatives):
-        self._u_dot = derivatives.item(3)
-        self._v_dot = derivatives.item(4)
-        self._w_dot = derivatives.item(5)
-        self._p_dot = derivatives.item(10)
-        self._q_dot = derivatives.item(11)
-        self._r_dot = derivatives.item(12)
+    def set_inertial_acceleration_states(self, state, new_state, dt):
+        prev_quat = np.array([state.item(6), state.item(7), state.item(8), state.item(9)])
+        prev_vel = self._Quaternion2Rotation(prev_quat) @ np.array([state.item(3), state.item(4), state.item(5)])
+        quat = np.array([new_state[6], new_state[7], new_state[8], new_state[9]])
+        vel = self._Quaternion2Rotation(quat) @ np.array([new_state.item(3), new_state.item(4), new_state.item(5)])
+        accel = (vel - prev_vel)/dt
+        self._north_ddot = accel.item(0)
+        self._east_ddot = accel.item(1)
+        self._down_ddot = accel.item(2)
 
     def set_state(self,state):
-        self._north = state.item(0)  # initial north position
-        self._east = state.item(1)  # initial east position
-        self._down = state.item(2)  # initial down position
+        self._north = state.item(0) # initial north position
+        self._east = state.item(1)  # initial east  position
+        self._down = state.item(2)  # initial down  position
         self._u = state.item(3)  # initial velocity along body x-axis
         self._v = state.item(4)  # initial velocity along body y-axis
         self._w = state.item(5)  # initial velocity along body z-axis
@@ -98,7 +96,7 @@ class FixedWingModel(VehicleModel3D):
         self._e3 = state.item(9)
         self._p = state.item(10)  # initial roll rate
         self._q = state.item(11)  # initial pitch rate
-        self._r = state.item(12) 
+        self._r = state.item(12)
 
     def get_ax(self):
         return self.ax
@@ -121,7 +119,6 @@ class FixedWingModel(VehicleModel3D):
         k4 = self._derivatives(state + time_step*k3, forces_moments)
         derivatives = (k1 + 2*k2 + 2*k3 + k4)/6
         new_state = state + time_step*derivatives
-        self.set_acceleration_states(derivatives)
         # normalize the quaternion
         e0 = new_state.item(6)
         e1 = new_state.item(7)
@@ -133,6 +130,7 @@ class FixedWingModel(VehicleModel3D):
         new_state[8] = new_state.item(8)/normE
         new_state[9] = new_state.item(9)/normE
         # update the airspeed, angle of attack, and side slip angles using new state
+        self.set_inertial_acceleration_states(state, new_state, dt)
         self.set_state(new_state)
 
     def _derivatives(self, state, forces_moments):
@@ -365,7 +363,6 @@ class FixedWingModel(VehicleModel3D):
             self._draw_wings(wings)
             self._draw_tail(tail)
             self._draw_rudder(rudder)
-            print("plotting: ")
 
     def update_graphics(self):
         self.translation = np.array([[self._north],[self._east],[self._down]])

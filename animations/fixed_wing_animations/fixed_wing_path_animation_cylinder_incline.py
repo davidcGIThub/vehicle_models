@@ -64,7 +64,7 @@ plane_model = FixedWingModel(ax, fixed_wing_parameters,
                   wingspan = wingspan, fuselage_length = fuselage_length,
                     state = state0)
 autopilot = FixedWingAutopilot(control_parameters)
-path_follower = FixedWingSplinePathFollower(order, distance_gain=3, path_direction_gain=2, feedforward_gain=3, feedforward_distance=3, integrator_gain=0.05)
+path_follower = FixedWingSplinePathFollower(order, distance_gain=5, path_direction_gain=60, feedforward_gain=500, feedforward_distance=3, integrator_gain=0.1)
 path_manager = SplinePathManager(control_point_list)
 
 obstacle = Obstacle(np.array([250,250,0]), 141.42/2, 300)

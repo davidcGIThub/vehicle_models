@@ -16,6 +16,7 @@ from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePat
 from time import sleep
 import sys
 from dataclasses import dataclass
+import math
 
 @dataclass
 class PathData:
@@ -88,7 +89,7 @@ class FixedWingPathFollowingSimulator:
             velocity = self._plane_model.get_inertial_velocity()
             acceleration = self._plane_model.get_inertial_acceleration()
             path_control_points = self._path_manager.get_current_path_control_points(position, closest_point)
-            cmds = self._path_follower.get_commands(path_control_points, position, desired_speed)
+            cmds = self._path_follower.get_commands_from_bspline(path_control_points, position, desired_speed, dt)
             delta = self._plane_autopilot.get_commands(cmds, state, wind, dt)
             self._plane_model.update(delta, wind, dt)
             scale_factor = 1
@@ -100,6 +101,7 @@ class FixedWingPathFollowingSimulator:
             vehicle_location_data[:,i] = position
             vehicle_velocity_data[:,i] = velocity
             vehicle_acceleration_data[:,i] = acceleration
+        vehicle_acceleration_data[:,0] = vehicle_acceleration_data[:,1]
         # tracked_path_data = self._path_manager.get_tracked_path_data(path_control_point_list, num_data_points)
         vehicle_curvature_data = self.__calculate_curvature_data(vehicle_velocity_data, vehicle_acceleration_data)
         vehicle_incline_data = self.__calculate_inclination_data(vehicle_velocity_data)
@@ -216,9 +218,6 @@ class FixedWingPathFollowingSimulator:
         min_y = np.min(np.concatenate((vehicle_location_data[1,:], path_data[1,:])))
         max_z = np.max(np.concatenate((vehicle_location_data[2,:], path_data[2,:])))
         min_z = np.min(np.concatenate((vehicle_location_data[2,:], path_data[2,:])))
-        print("max_veh z: ", np.max(vehicle_location_data[2,:]))
-        print("max_path z: ", np.max(path_data[0,:]))
-        print("min_z: ", min_z)
         ax.set_xlim3d([min_x, max_x])
         ax.set_ylim3d([min_y, max_y])
         ax.set_zlim3d([min_z, max_z])
@@ -315,4 +314,84 @@ class FixedWingPathFollowingSimulator:
         ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
         ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
         ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
-        
+
+
+    def run_simulation_dubins(self, path_position_data, path_tangent_data, path_perpindicular_data, 
+                              path_curvature_data, desired_speed, 
+                        obstacle_list:'list[Obstacle]' = [], sfc_list:list = [],
+                        intervals_per_sfc: np.ndarray = np.array([]), waypoints=np.array([]),
+                        dt: float = 0.01, run_time: float= 30, frame_width = 15,
+                        animate = True, plot = True, instances_per_plot=10, graphic_scale=1, obstacle_type = "sphere"):
+
+            states_list, vehicle_path_data, path_data_list, tracked_path_data, \
+                closest_distances_to_obstacles, closest_distances_to_sfc_walls \
+                = self.collect_simulation_data_dubins(path_position_data, path_tangent_data, 
+                                                      path_perpindicular_data, path_curvature_data, 
+                                                      desired_speed, obstacle_list, 
+                                                      sfc_list, intervals_per_sfc,
+                                            dt, run_time)
+            if animate == True:
+                self.animate_simulation(states_list, 
+                            path_data_list, tracked_path_data, 
+                            obstacle_list, sfc_list, waypoints=waypoints, 
+                            frame_width=frame_width, dt=dt)
+            if plot == True:
+                self.plot_simulation(states_list, vehicle_path_data, path_data_list, tracked_path_data, 
+                                    obstacle_list, sfc_list, waypoints, instances_per_plot, graphic_scale=graphic_scale, obstacle_type=obstacle_type)
+            return vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls
+            
+
+    def collect_simulation_data_dubins(self, path_position_data, path_tangent_data, 
+                                       path_perpindicular_data, path_curvature_data,
+                                desired_speed: float = 30, obstacle_list:'list[Obstacle]' = [], 
+                                sfc_list:list = [], intervals_per_sfc:list = [],
+                                dt: float = 0.01, run_time: float= 30):
+        #### Initilize Data ####
+        # extract path data #
+        time_data = np.linspace(0,run_time, int(run_time/dt+1))
+        num_data_points = len(time_data)
+        vehicle_location_data = np.zeros((3,num_data_points))
+        vehicle_velocity_data = np.zeros((3,num_data_points))
+        vehicle_acceleration_data = np.zeros((3,num_data_points))
+        tracked_location_data = np.zeros((3,num_data_points))
+        tracked_velocity_data = np.zeros((3,num_data_points))
+        tracked_curvature_data = np.zeros(num_data_points)
+        wind = np.array([0,0,0,0,0,0])
+        states_list = []
+        # path_data = self._spline_eval.matrix_bspline_evaluation_for_dataset(path_control_points, 1000)
+        for i in range(num_data_points):
+            state = self._plane_model.get_state()
+            position = np.array([state.item(0), state.item(1), state.item(2)])
+            velocity = self._plane_model.get_inertial_velocity()
+            acceleration = self._plane_model.get_inertial_acceleration()
+            cmds = self._path_follower.get_commands_from_dubins(path_position_data, path_tangent_data, 
+                                                                path_perpindicular_data, 
+                                                                path_curvature_data, position, desired_speed)
+            delta = self._plane_autopilot.get_commands(cmds, state, wind, dt)
+
+            self._plane_model.update(delta, wind, dt)
+            distances = np.linalg.norm(position.flatten()[:,None] - path_position_data,2,0)
+            closest_point_index = np.argmin(distances)
+            closest_position = path_position_data[:,closest_point_index][:,None]
+            closest_velocity = path_tangent_data[:,closest_point_index][:,None]
+            closest_curvature = path_curvature_data[closest_point_index]
+            states_list.append(state)
+            tracked_location_data[:,i] = closest_position.flatten()
+            tracked_velocity_data[:,i] = closest_velocity.flatten()
+            tracked_curvature_data[i] = closest_curvature
+            vehicle_location_data[:,i] = position
+            vehicle_velocity_data[:,i] = velocity
+            vehicle_acceleration_data[:,i] = acceleration
+    
+        vehicle_acceleration_data[:,0] = vehicle_acceleration_data[:,1]
+        # tracked_path_data = self._path_manager.get_tracked_path_data(path_control_point_list, num_data_points)
+        vehicle_curvature_data = self.__calculate_curvature_data(vehicle_velocity_data, vehicle_acceleration_data)
+        vehicle_incline_data = self.__calculate_inclination_data(vehicle_velocity_data)
+        tracked_incline_data = self.__calculate_inclination_data(tracked_velocity_data)
+        vehicle_path_data = PathData(vehicle_location_data, vehicle_curvature_data, vehicle_incline_data, time_data)
+        tracked_path_data = PathData(tracked_location_data, tracked_curvature_data, tracked_incline_data, time_data)
+        closest_distances_to_obstacles = get_obstacle_violations(obstacle_list, tracked_location_data)
+        closest_distances_to_sfc_walls = []
+        path_position_data_list = [path_position_data]
+        return states_list, vehicle_path_data, path_position_data_list, tracked_path_data, \
+                closest_distances_to_obstacles, closest_distances_to_sfc_walls
