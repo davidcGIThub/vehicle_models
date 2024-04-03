@@ -10,7 +10,7 @@ from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingPara
 from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWingControlParameters, FixedWingAutopilot
 from vehicle_simulator.vehicle_controllers.fixed_wing_path_follower import FixedWingSplinePathFollower
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
-from vehicle_simulator.vehicle_simulators.spatial_violations import get_box_violations_from_spline, get_obstacle_violations, \
+from vehicle_simulator.vehicle_simulators.spatial_violations import get_box_violations_from_spline , get_obstacle_violations, \
     Obstacle, plot_3D_obstacles, plot_cylinders
 from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePathManager
 from time import sleep
@@ -32,6 +32,7 @@ class FixedWingPathFollowingSimulator:
                  plane_autopilot: FixedWingAutopilot,
                  path_follower: FixedWingSplinePathFollower,
                  path_manager: SplinePathManager):
+        pass
         self._plane_model = plane_model
         self._plane_autopilot = plane_autopilot
         self._path_follower = path_follower
@@ -366,7 +367,7 @@ class FixedWingPathFollowingSimulator:
             acceleration = self._plane_model.get_inertial_acceleration()
             cmds = self._path_follower.get_commands_from_dubins(path_position_data, path_tangent_data, 
                                                                 path_perpindicular_data, 
-                                                                path_curvature_data, position, desired_speed)
+                                                                path_curvature_data, position, desired_speed, dt)
             delta = self._plane_autopilot.get_commands(cmds, state, wind, dt)
 
             self._plane_model.update(delta, wind, dt)

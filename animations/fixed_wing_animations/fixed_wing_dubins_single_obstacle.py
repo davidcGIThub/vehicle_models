@@ -54,7 +54,7 @@ plt.show()
 
 
 order = 3
-run_time = 39.6
+
 gravity = 9.8
 max_roll = np.radians(25)
 desired_airspeed = 20
@@ -73,9 +73,7 @@ obstacle_list = []
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-fig.add_axes(ax)
+
 north = 0
 east = 0
 down = -100
@@ -95,17 +93,23 @@ wingspan = 3
 fuselage_length = 3
 state0 = np.array([north, east, down,  u, v, w,
                       e0,   e1,   e2, e3, p, q, r])
-plane_model = FixedWingModel(ax, fixed_wing_parameters,
+
+plane_model = FixedWingModel(vehicle_parameters = fixed_wing_parameters,
                   wingspan = wingspan, fuselage_length = fuselage_length,
                     state = state0)
+
 autopilot = FixedWingAutopilot(control_parameters)
-path_follower = FixedWingSplinePathFollower(order, distance_gain = 5, path_direction_gain = 60, 
-                                            feedforward_gain = 500  , feedforward_distance = 3, 
-                                            integrator_gain = 0.1)
+
+path_follower = FixedWingSplinePathFollower(order, distance_p_gain = 6, distance_i_gain = 0.05, distance_d_gain = 3.5,
+                                            path_direction_gain = 60, feedforward_gain = 600, feedforward_distance = 3, 
+                                            start_position = np.array([north,east,down]))
+
 control_points_1 = np.array([[-1.92718378e+02, -2.12381699e+00,  2.01213646e+02 , 4.35400071e+02],
                              [-2.67206060e+01,  1.33603030e+01, -2.67206060e+01,  3.52323025e+01],
                              [-7.84626885e+01,  9.23134424e+00, -7.84626885e+01, -1.66158330e+02]])
+
 control_point_list = [control_points_1]
+
 path_manager = SplinePathManager(control_point_list)
 
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
@@ -117,4 +121,4 @@ vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_di
                                obstacle_list = obstacle_list, obstacle_type="cylinder", graphic_scale=20)
 
 wing_sim.plot_simulation_analytics(vehicle_path_data, tracked_path_data,
-                max_curvature, max_incline_angle, closest_distances_to_obstacles)
+                                    max_curvature,    max_incline_angle, closest_distances_to_obstacles)

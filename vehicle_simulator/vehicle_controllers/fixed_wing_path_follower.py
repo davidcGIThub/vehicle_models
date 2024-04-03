@@ -47,6 +47,7 @@ class FixedWingSplinePathFollower:
             path_change_vector = closest_acceleration_vector.flatten() - accel_proj_onto_vel.flatten()
             path_change_vector = path_change_vector/np.linalg.norm(path_change_vector)
         error_vector = closest_point.flatten() - vehicle_position.flatten()
+        error_direction = error_vector / np.linalg.norm(error_vector)
         prev_error_vector = closest_point.flatten() - self._prev_position.flatten()
         distance = np.linalg.norm(error_vector,2)
         derivative_vector = (vehicle_position.flatten() - self._prev_position.flatten())/dt
@@ -55,9 +56,13 @@ class FixedWingSplinePathFollower:
         
         if distance < self._feedforward_distance:
             self._integrator_term += dt*(error_vector + prev_error_vector)/2
+            # integrator_vector = np.dot(self._integrator_term, error_direction)*error_direction
+            integrator_vector = self._integrator_term
+            # self._integrator_term += np.dot(dt*(error_vector + prev_error_vector)/2, error_direction)*error_direction
+            # integrator_vector = self._integrator_term
             desired_direction_vector = \
                   error_vector.flatten()              *  self._distance_p_gain \
-                + self._integrator_term.flatten()     *  self._distance_i_gain \
+                + integrator_vector.flatten()         *  self._distance_i_gain \
                 - derivative_vector_lateral.flatten() *  self._distance_d_gain \
                 + path_direction_vector.flatten()*self._path_direction_gain \
                 + path_change_vector.flatten() * self._feedforward_gain * curvature
