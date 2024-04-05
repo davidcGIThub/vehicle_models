@@ -11,7 +11,7 @@ from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWing
 from vehicle_simulator.vehicle_controllers.fixed_wing_path_follower import FixedWingSplinePathFollower
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 from vehicle_simulator.vehicle_simulators.spatial_violations import get_box_violations_from_spline , get_obstacle_violations, \
-    Obstacle, plot_3D_obstacles, plot_cylinders
+    Obstacle, plot_3D_obstacles, plot_cylinders, plot_buildings
 from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePathManager
 from time import sleep
 import sys
@@ -197,6 +197,8 @@ class FixedWingPathFollowingSimulator:
             plot_3D_obstacles(obstacle_list, ax)
         elif (obstacle_type == "cylinder"):
             plot_cylinders(obstacle_list, ax)
+        elif (obstacle_type == "building"):
+            plot_buildings(obstacle_list, ax)
         for j in range(len(sfc_list)):
             sfc_points = sfc_list[j]
             ax.plot(sfc_points[0,:], sfc_points[1,:],sfc_points[2,:], alpha=0.5)

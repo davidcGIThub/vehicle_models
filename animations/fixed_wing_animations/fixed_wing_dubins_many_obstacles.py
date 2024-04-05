@@ -24,7 +24,19 @@ path_perpindicular_arr = np.load('path_perpindicular.npy').transpose()
 path_tangent_arr = np.load('path_tangent.npy').transpose()
 time_arr = np.load('time_arr.npy')
 parameters = np.load('parameters.npy')
-obstacle_data = np.load('obstacle_data.npy')
+obstacle_data = np.load('obstacles.npy')
+
+obstacle = Obstacle(np.array([250,250,0]), 282.84/2, 300)
+obstacle_list = []
+num_obstacles = np.shape(obstacle_data)[1]
+for i in range(num_obstacles):
+    center_ = np.array([obstacle_data[0,i], obstacle_data[1,i], 0])
+    height_ = obstacle_data[2,i]
+    radius_ = obstacle_data[3,i]
+    obstacle_ = Obstacle(center= center_, radius=radius_, height=height_)
+    obstacle_list.append(obstacle_)
+
+
 states_list = []
 num_states = np.shape(states_arr)[0]
 vehicle_location_data = np.zeros((3,num_states))
@@ -64,13 +76,6 @@ max_incline_angle = max_pitch
 max_incline = np.tan(max_incline_angle)
 
 run_time = time_arr[-1] - time_arr[0]
-
-# obstacle_1 = Obstacle(center=np.array([[25,],[25],[-20]]), radius = 20)
-# obstacle_2 = Obstacle(center=np.array([[100,],[25],[-20]]), radius = 20)
-# obstacle = Obstacle(np.array([250,250,0]), 141.42/2, 300)
-obstacle = Obstacle(np.array([250,250,0]), 282.84/2, 300)
-obstacle_list = [obstacle]
-# obstacle_list = []
 
 
 fixed_wing_parameters = FixedWingParameters()
@@ -121,7 +126,7 @@ vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_di
      = wing_sim.run_simulation_dubins(path_position_data = path_location_arr, path_tangent_data = path_tangent_arr,
                                path_perpindicular_data = path_perpindicular_arr, run_time = run_time,
                                path_curvature_data = path_curvature_arr, desired_speed = desired_airspeed, 
-                               obstacle_list = obstacle_list, obstacle_type="cylinder", graphic_scale=20)
+                               obstacle_list = obstacle_list, obstacle_type="building", graphic_scale=20)
 
 wing_sim.plot_simulation_analytics(vehicle_path_data, tracked_path_data,
                                     max_curvature,    max_incline_angle, closest_distances_to_obstacles)
