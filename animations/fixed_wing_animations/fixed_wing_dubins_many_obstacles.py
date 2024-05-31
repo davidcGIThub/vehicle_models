@@ -75,7 +75,7 @@ max_curvature = gravity*np.tan(max_roll)/(desired_airspeed**2)
 max_incline_angle = max_pitch
 max_incline = np.tan(max_incline_angle)
 
-run_time = time_arr[-1] - time_arr[0]
+run_time = time_arr[-75] - time_arr[0]
 
 
 fixed_wing_parameters = FixedWingParameters()

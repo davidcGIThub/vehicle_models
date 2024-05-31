@@ -192,7 +192,7 @@ class FixedWingPathFollowingSimulator:
                 ax.plot(path_data[0,:], path_data[1,:],path_data[2,:], alpha=0.8, color="tab:blue")
         ax.plot(vehicle_location_data[0,:], vehicle_location_data[1,:], vehicle_location_data[2,:], linestyle="dashed", color="0.5", label = "vehicle path" )
         if waypoints.size != 0:
-            ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65)
+            ax.plot(waypoints[0,:], waypoints[1,:],waypoints[2,:], marker="o", linestyle='None', color="tab:green", markersize=8, alpha=0.65, label = "waypoints")
         if (obstacle_type == "sphere"):
             plot_3D_obstacles(obstacle_list, ax)
         elif (obstacle_type == "cylinder"):
@@ -255,22 +255,18 @@ class FixedWingPathFollowingSimulator:
         # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
         axs[2].plot(time_data, np.degrees(path_incline),color='tab:blue',label="path")
         axs[2].plot(time_data, np.degrees(vehicle_incline), color = 'tab:olive', label =  "vehicle",linestyle="--")
-        axs[2].set_ylabel("Incline (deg)")
+        axs[2].set_ylabel("Slope Angle (deg)")
         axs[2].set_xlabel("Time (sec)")
-        if np.size(closest_distances_to_obstacles) > 0:
-            for i in range(np.size(closest_distances_to_obstacles)):
-                distance = closest_distances_to_obstacles[i]
-                bar_label = "obstacle " + str(i+1)
-                if distance >= 0:
-                    color_bar = "tab:blue"
-                else:
-                    color_bar = "tab:red"
-                axs[3].bar(bar_label, distance, color=color_bar)
-        axs[3].set_ylabel("Distance \n To Obstacles")
-        axs[3].set_xlabel("Obstacles")
+        velocity = (vehicle_path_data.location_data[:,1:] - vehicle_path_data.location_data[:,0:-1]) / (time_data[1:] - time_data[0:-1])
+        velocity_mag = np.linalg.norm(velocity,2,0)
+        axs[3].plot(time_data[0:-1], velocity_mag, color = 'tab:olive', label =  "vehicle",linestyle="--")
+        axs[3].plot(time_data[0:-1],time_data[0:-1]*0 + 20, color='tab:blue', label =  'desired')
+        axs[3].set_ylabel("Velocity (m/s)")
+        axs[3].set_xlabel("time (sec)")
         axs[0].legend(loc='upper left')
         axs[1].legend(loc='lower left')
         axs[2].legend(loc='lower left')
+        axs[3].legend(loc='upper left')
         # axs[3].legend(loc='lower left')
         # axs[0].tick_params(labelbottom = False, bottom = False)
         # axs[1].tick_params(labelbottom = False, bottom = False)
@@ -332,7 +328,7 @@ class FixedWingPathFollowingSimulator:
                                                       path_perpindicular_data, path_curvature_data, 
                                                       desired_speed, obstacle_list, 
                                                       sfc_list, intervals_per_sfc,
-                                            dt, run_time)
+                                                      dt, run_time)
             if animate == True:
                 self.animate_simulation(states_list, 
                             path_data_list, tracked_path_data, 

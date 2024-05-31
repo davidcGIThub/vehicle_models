@@ -4,6 +4,8 @@ A simple example of an animated plot... In 3D!
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib.animation as animation
 from vehicle_simulator.vehicle_models.fixed_wing_model import FixedWingModel
 from vehicle_simulator.vehicle_models.fixed_wing_parameters import FixedWingParameters
 from vehicle_simulator.vehicle_controllers.fixed_wing_autopilot import FixedWingControlParameters, FixedWingAutopilot
@@ -12,13 +14,11 @@ from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePat
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 from vehicle_simulator.vehicle_simulators.fixed_wing_path_follower_simulator import FixedWingPathFollowingSimulator
 from vehicle_simulator.vehicle_simulators.spatial_violations import Obstacle
-from vehicle_simulator.vehicle_models.helper_functions import euler_to_quaternion
 
-
+from time import sleep
 
 order = 3
-desired_speed = 25
-run_time = 300
+run_time = 38.6
 gravity = 9.8
 max_roll = np.radians(25)
 desired_airspeed = 20
@@ -27,67 +27,65 @@ max_curvature = gravity*np.tan(max_roll)/(desired_airspeed**2)
 
 max_incline_angle = max_pitch
 max_incline = np.tan(max_incline_angle)
-max_incline = 0.2
 
-obstacle_radius = 50
-obstacle_center = np.array([[250],[250],[150]])
-obstacle = Obstacle(center=obstacle_center, radius=obstacle_radius, height=0)
-obstacle_list = [obstacle] 
+obstacle_data = np.load('obstacles.npy')
 
-control_points_0 = np.load("control_points_0.npy")
-control_points_1 = np.load("control_points_1.npy")
-control_points_2 = np.load("control_points_2.npy")
-control_points_3 = np.load("control_points_3.npy")
-control_points_4 = np.load("control_points_4.npy")
-control_points_5 = np.load("control_points_5.npy")
-waypoints = np.load("waypoints.npy")
-# obstacle_1 = Obstacle(center=np.array([[25,],[25],[-20]]), radius = 20)
-# obstacle_2 = Obstacle(center=np.array([[100,],[25],[-20]]), radius = 20)
-# obstacle_list = [obstacle_1, obstacle_2]
-bspline_eval = BsplineEvaluator(order)
-start_direction = bspline_eval.get_velocity_vector(0, control_points_0[:,0:4], 1)
-position_array_0 = bspline_eval.matrix_bspline_evaluation_for_dataset(control_points_0, 1000)
-control_point_list = [control_points_0, control_points_1, control_points_2,control_points_3,
-                      control_points_4,control_points_5]
+obstacle_list = []
+num_obstacles = np.shape(obstacle_data)[1]
+for i in range(num_obstacles):
+    center_ = np.array([obstacle_data[0,i], obstacle_data[1,i], 0])
+    height_ = obstacle_data[2,i]
+    radius_ = obstacle_data[3,i]
+    obstacle_ = Obstacle(center= center_, radius=radius_, height=height_)
+    obstacle_list.append(obstacle_)
+# obstacle_list = []
 
+control_points = np.array([[-134.57241769,   15.68396869,   71.83654293,   74.32107005,  203.97298628,
+   444.52074694,  527.73962653,  444.52074694],
+ [ -17.56408073,  -23.19815583,  110.35670404,  236.95991258,  296.98298069,
+   371.35505656,  503.59087948,  614.2814255 ],
+ [-103.0251187,   -98.48744065, -103.0251187,  -134.59064032, -166.37186822,
+  -194.21626574, -202.89186713, -194.21626574]])
+
+control_point_list = [control_points]
 fixed_wing_parameters = FixedWingParameters()
 control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-fig.add_axes(ax)
-north = position_array_0[0,0]
-east = position_array_0[1,0]
-down = position_array_0[2,0]
-quat = euler_to_quaternion(0,0,np.pi)
-u = 10
+# ax = plt.axes(projection='3d')
+# plt.show()
+
+north = 0
+east = 0
+down = -100
+u = desired_airspeed
 v = 0
 w = 0
-e0 = quat.item(0)
-e1 = quat.item(1)
-e2 = quat.item(2)
-e3 = quat.item(3)
+
+e0 = 0.9617692
+e1 = 0
+e2 = 0
+e3 = 0.27386128
 p = 0
 q = 0
 r = 0
-wingspan = 2
-fuselage_length = 2
+wingspan = 3
+fuselage_length = 3
 state0 = np.array([north, east, down,  u, v, w,
                       e0,   e1,   e2, e3, p, q, r])
-
-plane_model = FixedWingModel(ax, fixed_wing_parameters,
-                  wingspan = wingspan, fuselage_length = fuselage_length,
-                    state = state0)
+plane_model = FixedWingModel(vehicle_parameters = fixed_wing_parameters,
+                  wingspan = wingspan, fuselage_length = fuselage_length, state = state0)
 autopilot = FixedWingAutopilot(control_parameters)
 path_follower = FixedWingSplinePathFollower(order, distance_p_gain = 6, distance_i_gain = 0.05, distance_d_gain = 3.5,
                                             path_direction_gain = 60, feedforward_gain = 600, feedforward_distance = 3, 
                                             start_position = np.array([north,east,down]))
+    
 path_manager = SplinePathManager(control_point_list)
 
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
+
 vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls \
-    = wing_sim.run_simulation(control_point_list, desired_speed, dt=0.1, run_time=run_time, graphic_scale=20, waypoints =waypoints,
-                              obstacle_list = obstacle_list)
+    = wing_sim.run_simulation(control_point_list, desired_airspeed, dt=0.1, 
+                              run_time=run_time, graphic_scale=20, obstacle_list = obstacle_list, obstacle_type="building")
 
 wing_sim.plot_simulation_analytics(vehicle_path_data, tracked_path_data,
-                max_curvature, max_incline_angle=max_incline, closest_distances_to_obstacles=closest_distances_to_obstacles)
+                max_curvature, max_incline_angle, closest_distances_to_obstacles)

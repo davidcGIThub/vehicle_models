@@ -63,6 +63,10 @@ class FixedWingAutopilot:
         climb_rate_command = cmd.item(1)
         airspeed_command = cmd.item(2)
         phi_feedforward = cmd.item(3)
+        if len(cmd.flatten()) > 4:
+            throttle_feedforward = cmd.item(4)
+        else:
+            throttle_feedforward = 0
         # get states
         phi, theta, psi = self.__Quaternion2Euler(state[6:10])
         R = self.__Quaternion2Rotation(state[6:10])
@@ -83,7 +87,7 @@ class FixedWingAutopilot:
         theta_c = self.altitude_rate_from_pitch.update(climb_rate_command, -pdot.item(2), dt)
         delta_e = self.pitch_from_elevator.update(theta_c, theta, q)
         delta_t = self.airspeed_from_throttle.update(airspeed_command, Va, dt)
-        delta_t = self.__saturate(delta_t, 0.0, 1.0)
+        delta_t = self.__saturate(throttle_feedforward + delta_t, 0.0, 1.0)
         # construct control outputs and commanded states
         delta = np.array([delta_t, delta_e, delta_a, delta_r])
         return delta
