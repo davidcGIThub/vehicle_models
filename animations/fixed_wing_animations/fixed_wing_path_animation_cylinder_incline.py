@@ -78,7 +78,7 @@ path_manager = SplinePathManager(control_point_list)
 
 obstacle = Obstacle(np.array([250,250,0]), 141.42/2, 300)
 obstacle_list = [obstacle]
-# obstacle_list = []
+obstacle_list = []
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
 vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls \
     = wing_sim.run_simulation(control_point_list, desired_speed, dt=0.1, 

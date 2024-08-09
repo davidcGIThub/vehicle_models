@@ -17,7 +17,7 @@ from vehicle_simulator.vehicle_models.helper_functions import euler_to_quaternio
 
 
 order = 3
-desired_speed = 25
+desired_speed = 16
 run_time = 300
 gravity = 9.8
 max_roll = np.radians(25)
@@ -60,7 +60,7 @@ north = position_array_0[0,0]
 east = position_array_0[1,0]
 down = position_array_0[2,0]
 quat = euler_to_quaternion(0,0,np.pi)
-u = 10
+u = 25
 v = 0
 w = 0
 e0 = quat.item(0)

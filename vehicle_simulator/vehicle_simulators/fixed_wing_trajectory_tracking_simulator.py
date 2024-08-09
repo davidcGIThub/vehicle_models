@@ -166,10 +166,14 @@ class FixedWingTrajectoryTrackingSimulator:
                 ax.scatter([trajectory_location_data[0,i]],
                         [trajectory_location_data[1,i]],
                         [trajectory_location_data[2,i]],lw=.5,color="tab:blue")
+        path_length = np.sum(np.linalg.norm(trajectory_location_data[:,1:] - trajectory_location_data[:,0:-1], 2, 0))
+        distance_travelled =  np.sum(np.linalg.norm(vehicle_location_data[:,1:] - vehicle_location_data[:,0:-1], 2, 0)) 
+        print("path_length: " , path_length)
+        print("distance_travelled: " , distance_travelled)
         # Setting the axes properties
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+        ax.set_xlabel('X(m)')
+        ax.set_ylabel('Y(m)')
+        ax.set_zlabel('Z(m)')
         max_x = np.max(np.concatenate((vehicle_location_data[0,:], trajectory_location_data[0,:])))
         min_x = np.min(np.concatenate((vehicle_location_data[0,:], trajectory_location_data[0,:])))
         max_y = np.max(np.concatenate((vehicle_location_data[1,:], trajectory_location_data[1,:])))
@@ -185,48 +189,64 @@ class FixedWingTrajectoryTrackingSimulator:
         self.__set_axes_equal(ax) ## TODO fix axes size
         plt.show()
 
-    # def plot_simulation_analytics(self, vehicle_path_data: PathData, tracked_path_data: PathData, 
-    #             max_curvature: float, max_incline_angle: float, closest_distances_to_obstacles:np.ndarray = np.empty(0)):
-    #     time_data = vehicle_path_data.time_data
-    #     path_curvature = tracked_path_data.curvature_data
-    #     vehicle_curvature = vehicle_path_data.curvature_data
-    #     path_incline = tracked_path_data.inclination_data
-    #     vehicle_incline = vehicle_path_data.inclination_data
-    #     tracking_error = np.linalg.norm(vehicle_path_data.location_data - tracked_path_data.location_data,2, 0)
-    #     fig, axs = plt.subplots(4,1)
-    #     axs[0].plot(time_data,tracking_error, color = 'tab:red', label="tracking\n error")
-    #     axs[0].plot(time_data,tracking_error*0, color = 'k')
-    #     axs[0].set_ylabel("Tracking Error \n (m)")
-    #     axs[0].set_xlabel("Time (sec)")
+    def plot_simulation_analytics(self, vehicle_trajectory_data: TrajectoryData, trajectory_data: TrajectoryData, 
+               max_velocity: float, max_cent_accel: float, max_tangential_acceleration: float, 
+               min_tangential_acceleration: float):
+        max_curvature = max_cent_accel/max_velocity**2
+        print("max curvature: " , max_curvature)
+        print("max_cent_accel: " , max_cent_accel)
+        print("max_velocity: " , max_velocity)
+        time_data = vehicle_trajectory_data.time_data
+        trajectory_curvature = trajectory_data.curvature_data
+        vehicle_curvature = vehicle_trajectory_data.curvature_data
+        tracking_error = np.linalg.norm(vehicle_trajectory_data.position_data - trajectory_data.position_data,2, 0)
+        fig, axs = plt.subplots(4,1)
+        axs[0].plot(time_data,tracking_error, color = 'tab:red', label="tracking\n error")
+        axs[0].plot(time_data,tracking_error*0, color = 'k')
+        axs[0].set_ylabel("Tracking Error \n (m)")
 
-    #     axs[1].plot(time_data, path_curvature*0 + max_curvature, color='k', label="max")
-    #     axs[1].plot(time_data, path_curvature, color = 'tab:blue', label= "path")
-    #     axs[1].plot(time_data, vehicle_curvature, color = 'tab:olive', label= "vehicle",linestyle="--")   
-    #     axs[1].set_ylabel("Curvature")
-    #     axs[1].set_xlabel("Time (sec)")
-    #     if max_incline_angle != None:
-    #         axs[2].plot(time_data, path_incline*0 + np.degrees(max_incline_angle), color='k', label="bounds")
-    #         axs[2].plot(time_data, path_incline*0 - np.degrees(max_incline_angle), color='k')
-    #     # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
-    #     axs[2].plot(time_data, np.degrees(path_incline),color='tab:blue',label="path")
-    #     axs[2].plot(time_data, np.degrees(vehicle_incline), color = 'tab:olive', label =  "vehicle",linestyle="--")
-    #     axs[2].set_ylabel("Slope Angle (deg)")
-    #     axs[2].set_xlabel("Time (sec)")
-    #     velocity = (vehicle_path_data.location_data[:,1:] - vehicle_path_data.location_data[:,0:-1]) / (time_data[1:] - time_data[0:-1])
-    #     velocity_mag = np.linalg.norm(velocity,2,0)
-    #     axs[3].plot(time_data[0:-1], velocity_mag, color = 'tab:olive', label =  "vehicle",linestyle="--")
-    #     axs[3].plot(time_data[0:-1],time_data[0:-1]*0 + 20, color='tab:blue', label =  'desired')
-    #     axs[3].set_ylabel("Velocity (m/s)")
-    #     axs[3].set_xlabel("time (sec)")
-    #     axs[0].legend(loc='upper left')
-    #     axs[1].legend(loc='lower left')
-    #     axs[2].legend(loc='lower left')
-    #     axs[3].legend(loc='upper left')
-    #     # axs[3].legend(loc='lower left')
-    #     # axs[0].tick_params(labelbottom = False, bottom = False)
-    #     # axs[1].tick_params(labelbottom = False, bottom = False)
-    #     # axs[2].tick_params(labelbottom = False, bottom = False)
-    #     plt.show()
+        vehicle_velocity_magnitude = np.linalg.norm(vehicle_trajectory_data.velocity_data,2,0)
+        trajectory_velocity_magnitude = np.linalg.norm(trajectory_data.velocity_data,2,0)
+        axs[1].plot(time_data, vehicle_velocity_magnitude, color = 'tab:olive', label =  "vehicle",linestyle="--")
+        axs[1].plot(time_data,trajectory_velocity_magnitude, color='tab:blue', label =  'trajectory')
+        axs[1].plot(time_data,time_data*0 + max_velocity, color='k', label = 'max')
+        axs[1].set_ylabel("Velocity (m/s)")
+        
+        trajectory_cent_accel = trajectory_curvature * trajectory_velocity_magnitude**2
+        vehicle_cent_accel = vehicle_curvature * vehicle_velocity_magnitude**2
+
+        vehicle_unit_velocity = vehicle_trajectory_data.velocity_data / trajectory_velocity_magnitude
+        trajectory_unit_velocity = trajectory_data.velocity_data / vehicle_velocity_magnitude
+        vehicle_tang_accel  =  np.diag(np.dot(vehicle_trajectory_data.acceleration_data.T , vehicle_unit_velocity))
+        trajectory_tang_accel = np.diag(np.dot(trajectory_data.acceleration_data.T    ,   trajectory_unit_velocity))
+
+        axs[2].plot(time_data, vehicle_tang_accel, color = 'tab:olive', label =  "vehicle",linestyle="--")
+        axs[2].plot(time_data,trajectory_tang_accel, color='tab:blue', label =  'trajectory')
+        axs[2].plot(time_data,time_data*0 + max_tangential_acceleration, color='k', label = 'bounds')
+        axs[2].plot(time_data,time_data*0 + min_tangential_acceleration, color='k')
+        axs[2].set_ylabel("Tangential\nAcceleration\n(m/s^2)")
+        
+
+        axs[3].plot(time_data, time_data*0 + max_cent_accel, color='k', label="max")
+        axs[3].plot(time_data, trajectory_cent_accel, color = 'tab:blue', label= "trajectory")
+        axs[3].plot(time_data, vehicle_cent_accel, color = 'tab:olive', label= "vehicle",linestyle="--")   
+        axs[3].set_ylabel("Centripetal\nAcceleration\n(m/s^2)")
+        axs[3].set_xlabel("time (sec)")
+
+        # axs[3].plot(time_data, time_data*0 + max_curvature, color='k', label="max")
+        # axs[3].plot(time_data, trajectory_curvature, color = 'tab:blue', label= "trajectory")
+        # axs[3].plot(time_data, vehicle_curvature, color = 'tab:olive', label= "vehicle",linestyle="--")   
+        # axs[3].set_ylabel("Curvature")
+        axs[0].tick_params(labelbottom = False, bottom = False)
+        axs[1].tick_params(labelbottom = False, bottom = False)
+        axs[2].tick_params(labelbottom = False, bottom = False)
+        axs[3].set_xlabel("Time (sec)")
+        axs[0].legend(loc='upper left')
+        axs[1].legend(loc='lower left')
+        axs[2].legend(loc='lower left')
+        axs[3].legend(loc='upper left')
+
+        plt.show()
 
     def __calculate_curvature_data(self, velocity_data, acceleration_data):
             cross_product_norm = np.linalg.norm(np.transpose(np.cross(velocity_data.T, acceleration_data.T)),2,0)

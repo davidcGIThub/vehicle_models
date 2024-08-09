@@ -238,6 +238,14 @@ class FixedWingPathFollowingSimulator:
         path_incline = tracked_path_data.inclination_data
         vehicle_incline = vehicle_path_data.inclination_data
         tracking_error = np.linalg.norm(vehicle_path_data.location_data - tracked_path_data.location_data,2, 0)
+        
+        path_location_data = tracked_path_data.location_data
+        vehicle_location_data = vehicle_path_data.location_data
+        path_length = np.sum(np.linalg.norm(path_location_data[:,1:] - path_location_data[:,0:-1], 2, 0))
+        distance_travelled =  np.sum(np.linalg.norm(vehicle_location_data[:,1:] - vehicle_location_data[:,0:-1], 2, 0)) 
+        print("path_length: " , path_length)
+        print("distance_travelled: " , distance_travelled)
+        
         fig, axs = plt.subplots(4,1)
         axs[0].plot(time_data,tracking_error, color = 'tab:red', label="tracking\n error")
         axs[0].plot(time_data,tracking_error*0, color = 'k')
@@ -260,13 +268,13 @@ class FixedWingPathFollowingSimulator:
         velocity = (vehicle_path_data.location_data[:,1:] - vehicle_path_data.location_data[:,0:-1]) / (time_data[1:] - time_data[0:-1])
         velocity_mag = np.linalg.norm(velocity,2,0)
         axs[3].plot(time_data[0:-1], velocity_mag, color = 'tab:olive', label =  "vehicle",linestyle="--")
-        axs[3].plot(time_data[0:-1],time_data[0:-1]*0 + 20, color='tab:blue', label =  'desired')
+        axs[3].plot(time_data[0:-1],time_data[0:-1]*0 + 28, color='tab:blue', label =  'desired')
         axs[3].set_ylabel("Velocity (m/s)")
         axs[3].set_xlabel("time (sec)")
         axs[0].legend(loc='upper left')
         axs[1].legend(loc='lower left')
         axs[2].legend(loc='lower left')
-        axs[3].legend(loc='upper left')
+        axs[3].legend(loc='lower left')
         # axs[3].legend(loc='lower left')
         # axs[0].tick_params(labelbottom = False, bottom = False)
         # axs[1].tick_params(labelbottom = False, bottom = False)

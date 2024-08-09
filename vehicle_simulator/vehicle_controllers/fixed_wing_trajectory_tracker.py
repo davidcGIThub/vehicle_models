@@ -6,7 +6,7 @@ class FixedWingTrajectoryTracker:
 
     def __init__(self, order, p_gain = 2, i_gain = 0.1, d_gain = 2,
                   feedforward_tolerance = 5, integrator_tolerance = 5, start_position = np.zeros(3),
-                  fixed_wing_parameters = FixedWingParameters()):
+                  max_velocity = 25, min_velocity = 16, fixed_wing_parameters = FixedWingParameters()):
         self._order = order
         self._p_gain = p_gain
         self._i_gain = i_gain
@@ -18,6 +18,8 @@ class FixedWingTrajectoryTracker:
         self._prev_position = start_position
         self._prev_time = 0
         self._fixed_wing_parameters = fixed_wing_parameters
+        self._max_velocity = max_velocity
+        self._min_velocity = min_velocity
 
     def get_commands_from_bspline(self, control_points, scale_factor, start_knot, vehicle_state, t):
         position_traj, velocity_traj, acceleration_traj = self._spline_evaluator.get_position_and_derivatives(
@@ -28,24 +30,28 @@ class FixedWingTrajectoryTracker:
 
     def get_commands(self, position_traj, velocity_traj, acceleration_traj, vehicle_state, t):
         dt = t - self._prev_time
-        vehicle_position = vehicle_state.flatten()[0:3]
         vehicle_velocity_magnitude = np.linalg.norm(vehicle_state.flatten()[3:6])
-        desired_velocity_vector, distance_error_magnitude = \
-            self.get_desired_velocity_vector(position_traj, velocity_traj, vehicle_position, dt)
-        # roll_feedforward = self.get_roll_feedforward(velocity_traj, acceleration_traj, \
-        #                                              vehicle_velocity_magnitude, distance_error_magnitude)
+        desired_direction_vector, desired_velocity_magnitude, distance_error_magnitude = \
+            self.get_desired_velocity_vector(position_traj, velocity_traj, vehicle_state, dt)
+        roll_feedforward = self.get_roll_feedforward(velocity_traj, acceleration_traj, \
+                                                     vehicle_velocity_magnitude, distance_error_magnitude)
         # throttle_feedforward = self.get_throttle_feedforward( velocity_traj, acceleration_traj, \
         #                                                      vehicle_velocity_magnitude, distance_error_magnitude)
-        roll_feedforward = 0
+        # roll_feedforward = 0
         throttle_feedforward = 0
-        course_angle_command = np.arctan2(desired_velocity_vector.item(1), desired_velocity_vector.item(0))
-        airspeed_command = np.linalg.norm(desired_velocity_vector)
-        climb_rate_command =  -desired_velocity_vector.item(2)
-        self._prev_position = vehicle_position
+        course_angle_command = np.arctan2(desired_direction_vector.item(1), desired_direction_vector.item(0))
+        airspeed_command = np.clip(np.linalg.norm(desired_velocity_magnitude),self._min_velocity,self._max_velocity)
+        climb_rate_command =  -desired_direction_vector.item(2)*airspeed_command
+        self._prev_position = vehicle_state.flatten()[0:3]
         return np.array([course_angle_command, climb_rate_command, airspeed_command, \
                          roll_feedforward, throttle_feedforward])
 
-    def get_desired_velocity_vector(self, position_traj, velocity_traj, vehicle_position, dt):
+    def get_desired_velocity_vector(self, position_traj, velocity_traj, vehicle_state, dt):
+        vehicle_position = vehicle_state.flatten()[0:3]
+        quat = vehicle_state.flatten()[6:10]
+        body_vel = vehicle_state.flatten()[3:6]
+        inertial_vel = self._Quaternion2Rotation(quat) @ body_vel
+        unit_inertial_vel = inertial_vel / np.linalg.norm(inertial_vel)
         path_direction = velocity_traj.flatten()/np.linalg.norm(velocity_traj)
         error_vector = position_traj.flatten() - vehicle_position.flatten()
         prev_error_vector = position_traj.flatten() - self._prev_position.flatten()
@@ -69,7 +75,9 @@ class FixedWingTrajectoryTracker:
                 - derivative_vector_lateral.flatten() *  self._d_gain \
                 + velocity_traj.flatten()
             self._integrator_term = np.zeros(3)
-        return desired_velocity_vector, distance_error_magnitude
+        desired_direction_vector = desired_velocity_vector / np.linalg.norm(desired_velocity_vector)
+        desired_velocity_magnitude = np.dot(desired_velocity_vector, unit_inertial_vel)
+        return desired_direction_vector, desired_velocity_magnitude, distance_error_magnitude
 
     def get_roll_feedforward(self, velocity_traj, acceleration_traj, vehicle_velocity, distance_error_magnitude):
         gravity = self._fixed_wing_parameters.gravity
@@ -112,3 +120,17 @@ class FixedWingTrajectoryTracker:
 
     def get_order(self):
         return self._order
+    
+    def _Quaternion2Rotation(self, quaternion):
+        """
+        converts a quaternion attitude to a rotation matrix
+        """
+        e0 = quaternion.item(0)
+        e1 = quaternion.item(1)
+        e2 = quaternion.item(2)
+        e3 = quaternion.item(3)
+        R = np.array([[e1 ** 2.0 + e0 ** 2.0 - e2 ** 2.0 - e3 ** 2.0, 2.0 * (e1 * e2 - e3 * e0), 2.0 * (e1 * e3 + e2 * e0)],
+                    [2.0 * (e1 * e2 + e3 * e0), e2 ** 2.0 + e0 ** 2.0 - e1 ** 2.0 - e3 ** 2.0, 2.0 * (e2 * e3 - e1 * e0)],
+                    [2.0 * (e1 * e3 - e2 * e0), 2.0 * (e2 * e3 + e1 * e0), e3 ** 2.0 + e0 ** 2.0 - e1 ** 2.0 - e2 ** 2.0]])
+        R = R/np.linalg.det(R)
+        return R

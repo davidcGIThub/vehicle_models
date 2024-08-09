@@ -250,7 +250,7 @@ class VehicleTrajectoryTrackingSimulator:
         # axs[2].plot(path_time_data, path_acceleration_magnitude,color='tab:cyan',label="des accel")
         axs[2].plot(path_time_data, path_long_accel_mag,color='tab:blue',label="des")
         axs[2].plot(true_time_data, true_long_accel_mag, color = 'tab:olive', label =  "true",linestyle="--")
-        axs[2].set_ylabel("longitudinal \n acceleration \n (m/s^2)")
+        axs[2].set_ylabel("tangential \n acceleration \n (m/s^2)")
         axs[3].plot(path_time_data,path_time_data*0 + max_turn_value, color='k', label="max")
         axs[3].plot(path_time_data,path_turn_data,color='tab:blue', label="des")
         if vehicle_type == "bike":

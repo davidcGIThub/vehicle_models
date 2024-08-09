@@ -14,31 +14,31 @@ from vehicle_simulator.vehicle_controllers.bspline_path_manager import SplinePat
 from vehicle_simulator.vehicle_controllers.bspline_evaluator import BsplineEvaluator
 from vehicle_simulator.vehicle_simulators.fixed_wing_path_follower_simulator import FixedWingPathFollowingSimulator
 from vehicle_simulator.vehicle_simulators.spatial_violations import Obstacle
-
+from vehicle_simulator.vehicle_models.helper_functions import euler_to_quaternion
 from time import sleep
 
 
 
 order = 3
-run_time = 39
+run_time = 64
 gravity = 9.8
 max_roll = np.radians(25)
-desired_airspeed = 20
+desired_airspeed = 27.5
 max_pitch = np.radians(15)
 max_curvature = gravity*np.tan(max_roll)/(desired_airspeed**2)
 
 max_incline_angle = max_pitch
 max_incline = np.tan(max_incline_angle)
 
-obstacle = Obstacle(np.array([250,250,0]), 282.84/2, 300)
-obstacle_list = [obstacle]
-obstacle_list = []
+# obstacle_list = []
 
-control_points = np.array([[-65.68161151,   1.38680857,  60.13437721 , 77.1191904,   90.32194232,
-  169.19023168, 282.22754818, 408.08673907, 514.14045224, 535.35145197],
- [-18.29172615, -10.3475736,   59.68202054, 176.39898864, 296.28886737,
-  394.16479555, 445.37917743, 489.96812976, 505.01593512, 489.96812976],
-  [-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, ]])
+control_points = np.array([[ 770.97554794,  600.15676313,  428.39739953,  383.62744434,  501.58016088,
+   693.56792611,  839.91077866,  829.0830777,   813.79780047 , 770.75819338,
+   600.26544037,  428.18004515],
+ [-154.78908565 , -72.60545718, -154.78908565 ,-341.38959488, -491.90995326,
+  -493.11767462 ,-349.12348753, -100.32523817,  159.4482591,   345.26423442,
+   427.36788279 , 345.26423442],
+                 [300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300]])
 
 # control_points = np.array([
 #     [-94.24438422,   5.64360774,  71.66995326,  65.00296967, 172.88335329, 349.94638496, 522.94202478 , 558.28551591],
@@ -56,18 +56,23 @@ control_parameters = FixedWingControlParameters()
 # Attaching 3D axis to the figure
 # ax = plt.axes(projection='3d')
 # plt.show()
+scale_factor = 1
 
-north = 0
-east = 0
-down = -100
-u = desired_airspeed
+bspline_eval = BsplineEvaluator(order)
+start_velocity = bspline_eval.get_velocity_vector(0, control_points[:,0:4], scale_factor)
+start_position = bspline_eval.get_position_vector(0, control_points[:,0:4], scale_factor)
+
+north = start_position.item(0)
+east = start_position.item(1)
+down = start_position.item(2)
+quat = euler_to_quaternion(0,0,np.pi)
+u = 26
 v = 0
 w = 0
-
-e0 = 0.9617692
-e1 = 0
-e2 = 0
-e3 = 0.27386128
+e0 = quat.item(0)
+e1 = quat.item(1)
+e2 = quat.item(2)
+e3 = quat.item(3)
 p = 0
 q = 0
 r = 0
@@ -87,8 +92,8 @@ path_manager = SplinePathManager(control_point_list)
 wing_sim = FixedWingPathFollowingSimulator(plane_model, autopilot, path_follower, path_manager)
 
 vehicle_path_data, tracked_path_data, closest_distances_to_obstacles, closest_distances_to_sfc_walls \
-    = wing_sim.run_simulation(control_point_list, desired_airspeed, dt=0.1, 
-                              run_time=run_time, graphic_scale=20, obstacle_list =obstacle_list, obstacle_type="cylinder")
+    = wing_sim.run_simulation(control_point_list, desired_airspeed, dt=0.01, 
+                              run_time=run_time, graphic_scale=20)
 
 wing_sim.plot_simulation_analytics(vehicle_path_data, tracked_path_data,
                 max_curvature, max_incline_angle, closest_distances_to_obstacles)
